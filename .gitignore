@@ -1,0 +1,24 @@
+node_modules/
+dist/
+*.js.map
+*.d.ts.map
+*.d.ts
+
+# Keep figma plugin build output (code.js) since it's needed for the plugin
+!figma-plugin/code.js
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+.cursor/
+
+# Test files
+test-*.js
+
+# Env
+.env
+.env.local

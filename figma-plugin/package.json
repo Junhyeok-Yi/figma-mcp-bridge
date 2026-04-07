@@ -1,0 +1,17 @@
+{
+  "name": "figma-mcp-bridge-plugin",
+  "version": "1.0.0",
+  "description": "Figma plugin for MCP Bridge – connects to local relay server via WebSocket",
+  "main": "code.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": ["figma", "mcp", "bridge"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.124.0",
+    "typescript": "^6.0.2"
+  }
+}

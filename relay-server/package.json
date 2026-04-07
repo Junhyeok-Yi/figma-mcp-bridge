@@ -1,0 +1,23 @@
+{
+  "name": "figma-mcp-relay-server",
+  "version": "1.0.0",
+  "description": "Figma ↔ VS Code MCP Bridge Relay Server",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": ["figma", "mcp", "bridge", "websocket"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.2",
+    "@types/ws": "^8.18.1",
+    "typescript": "^6.0.2"
+  }
+}

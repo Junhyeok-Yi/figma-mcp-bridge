@@ -1,0 +1,13 @@
+{
+  "name": "MCP Bridge",
+  "id": "figma-mcp-bridge-plugin",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["*"],
+    "reasoning": "WebSocket connection to local MCP relay server"
+  }
+}

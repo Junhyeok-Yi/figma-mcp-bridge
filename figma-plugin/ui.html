@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-size: 12px;
+    color: var(--figma-color-text, #333);
+    background: var(--figma-color-bg, #fff);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    height: 100vh;
+  }
+
+  h2 { font-size: 14px; font-weight: 600; }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .badge {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .badge.connected    { background: #1bc47d; box-shadow: 0 0 6px #1bc47d88; }
+  .badge.disconnected { background: #f24822; box-shadow: 0 0 6px #f2482288; }
+  .badge.connecting   { background: #f5a623; box-shadow: 0 0 6px #f5a62388; }
+
+  .status-text { font-size: 12px; }
+
+  .log-area {
+    flex: 1;
+    background: var(--figma-color-bg-secondary, #f5f5f5);
+    border: 1px solid var(--figma-color-border, #e0e0e0);
+    border-radius: 6px;
+    padding: 8px;
+    overflow-y: auto;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .btn-row { display: flex; gap: 8px; }
+
+  button {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  button:hover { opacity: 0.85; }
+  button.primary {
+    background: #18a0fb;
+    color: #fff;
+  }
+  button.secondary {
+    background: var(--figma-color-bg-secondary, #e8e8e8);
+    color: var(--figma-color-text, #333);
+  }
+
+  .info {
+    font-size: 10px;
+    color: var(--figma-color-text-secondary, #999);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h2>MCP Bridge</h2>
+
+<div class="status-row">
+  <div id="badge" class="badge disconnected"></div>
+  <span id="statusText" class="status-text">연결 안됨</span>
+</div>
+
+<div id="log" class="log-area"></div>
+
+<div class="btn-row">
+  <button id="btnConnect" class="primary">연결</button>
+  <button id="btnDisconnect" class="secondary">연결 해제</button>
+</div>
+
+<div style="display:flex;align-items:center;gap:6px;font-size:11px;">
+  <span>ws://localhost:</span>
+  <input id="portInput" type="number" value="8080" min="1024" max="65535"
+    style="width:60px;padding:4px 6px;border:1px solid var(--figma-color-border,#ccc);border-radius:4px;font-size:11px;text-align:center;" />
+</div>
+
+<script>
+(function () {
+  const badge = document.getElementById("badge");
+  const statusText = document.getElementById("statusText");
+  const logEl = document.getElementById("log");
+  const btnConnect = document.getElementById("btnConnect");
+  const btnDisconnect = document.getElementById("btnDisconnect");
+  const portInput = document.getElementById("portInput");
+
+  function getWsUrl() {
+    return "ws://localhost:" + (portInput.value || "8080");
+  }
+
+  let ws = null;
+  let reconnectTimer = null;
+
+  function appendLog(msg) {
+    const ts = new Date().toLocaleTimeString("ko-KR", { hour12: false });
+    logEl.textContent += `[${ts}] ${msg}\n`;
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+
+  function setStatus(state) {
+    badge.className = "badge " + state;
+    const labels = {
+      connected: "연결됨 ✓",
+      disconnected: "연결 안됨",
+      connecting: "연결 중…",
+    };
+    statusText.textContent = labels[state] || state;
+  }
+
+  // -----------------------------------------------------------------------
+  // WebSocket lifecycle
+  // -----------------------------------------------------------------------
+  function connect() {
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+
+    const url = getWsUrl();
+    setStatus("connecting");
+    appendLog("서버에 연결 시도… (" + url + ")");
+    ws = new WebSocket(url);
+
+    ws.onopen = () => {
+      setStatus("connected");
+      appendLog("서버 연결 성공");
+      clearReconnect();
+    };
+
+    ws.onclose = () => {
+      setStatus("disconnected");
+      appendLog("서버 연결 끊김");
+      ws = null;
+      scheduleReconnect();
+    };
+
+    ws.onerror = (e) => {
+      appendLog("WebSocket 오류 발생");
+    };
+
+    ws.onmessage = (event) => {
+      let msg;
+      try { msg = JSON.parse(event.data); } catch { return; }
+      appendLog("← " + msg.type);
+      parent.postMessage({ pluginMessage: msg }, "*");
+    };
+  }
+
+  function disconnect() {
+    clearReconnect();
+    if (ws) {
+      ws.close();
+      ws = null;
+    }
+    setStatus("disconnected");
+    appendLog("수동 연결 해제");
+  }
+
+  function scheduleReconnect() {
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      appendLog("자동 재연결 시도…");
+      connect();
+    }, 3000);
+  }
+
+  function clearReconnect() {
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+  }
+
+  // -----------------------------------------------------------------------
+  // Receive results from code.ts → forward to relay server via WS
+  // -----------------------------------------------------------------------
+  window.onmessage = (event) => {
+    const msg = event.data?.pluginMessage;
+    if (!msg) return;
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
+      appendLog("→ " + msg.type);
+    } else {
+      appendLog("⚠ 전송 실패 (미연결): " + msg.type);
+    }
+  };
+
+  // -----------------------------------------------------------------------
+  // Button handlers
+  // -----------------------------------------------------------------------
+  btnConnect.onclick = connect;
+  btnDisconnect.onclick = disconnect;
+
+  // Auto-connect on load
+  connect();
+})();
+</script>
+</body>
+</html>
