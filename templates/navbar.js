@@ -1,32 +1,33 @@
 // Template: Navbar — top navigation bar
 // Params: title, items (comma-separated), w, x, y
 
-await figma.loadFontAsync({family: "Inter", style: "Semi Bold"});
+await figma.loadFontAsync({family: "Inter", style: "Bold"});
 await figma.loadFontAsync({family: "Inter", style: "Medium"});
 
 const menuItems = "{{items|Home,About,Contact}}".split(",").map(s => s.trim());
 
 const nav = figma.createFrame();
 nav.name = "Navbar";
+nav.resize({{w|1200}}, 10);
 nav.layoutMode = "HORIZONTAL";
 nav.primaryAxisSizingMode = "FIXED";
 nav.counterAxisSizingMode = "AUTO";
 nav.primaryAxisAlignItems = "SPACE_BETWEEN";
 nav.counterAxisAlignItems = "CENTER";
-nav.resize({{w|1200}}, 10);
 nav.paddingLeft = nav.paddingRight = 24;
-nav.paddingTop = nav.paddingBottom = 16;
+nav.paddingTop = nav.paddingBottom = 14;
 nav.fills = [{type: "SOLID", color: {r: 1, g: 1, b: 1}}];
-nav.strokes = [{type: "SOLID", color: {r: 0.898, g: 0.906, b: 0.922}}];
-nav.strokeWeight = 1;
-nav.strokeAlign = "INSIDE";
+nav.effects = [
+  {type: "DROP_SHADOW", color: {r:0, g:0, b:0, a:0.05}, offset: {x:0, y:1}, radius: 3, spread: 0, visible: true, blendMode: "NORMAL"},
+];
 nav.x = {{x|0}};
 nav.y = {{y|0}};
 
 const logo = figma.createText();
 logo.name = "Logo";
-logo.fontName = {family: "Inter", style: "Semi Bold"};
+logo.fontName = {family: "Inter", style: "Bold"};
 logo.fontSize = 18;
+logo.lineHeight = {unit: "PIXELS", value: 24};
 logo.characters = "{{title|Brand}}";
 logo.fills = [{type: "SOLID", color: {r: 0.067, g: 0.094, b: 0.153}}];
 nav.appendChild(logo);
@@ -37,14 +38,16 @@ menu.layoutMode = "HORIZONTAL";
 menu.primaryAxisSizingMode = "AUTO";
 menu.counterAxisSizingMode = "AUTO";
 menu.itemSpacing = 32;
+menu.counterAxisAlignItems = "CENTER";
 menu.fills = [];
 
-for (const item of menuItems) {
+for (let i = 0; i < menuItems.length; i++) {
   const link = figma.createText();
   link.fontName = {family: "Inter", style: "Medium"};
   link.fontSize = 14;
-  link.characters = item;
-  link.fills = [{type: "SOLID", color: {r: 0.420, g: 0.447, b: 0.498}}];
+  link.lineHeight = {unit: "PIXELS", value: 20};
+  link.characters = menuItems[i];
+  link.fills = [{type: "SOLID", color: i === 0 ? {r: 0.231, g: 0.510, b: 0.965} : {r: 0.380, g: 0.408, b: 0.459}}];
   menu.appendChild(link);
 }
 

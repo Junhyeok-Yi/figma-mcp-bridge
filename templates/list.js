@@ -7,13 +7,13 @@ const items = "{{items|Item 1,Item 2,Item 3}}".split(",").map(s => s.trim());
 
 const list = figma.createFrame();
 list.name = "List";
+list.resize({{w|320}}, 10);
 list.layoutMode = "VERTICAL";
 list.primaryAxisSizingMode = "AUTO";
 list.counterAxisSizingMode = "FIXED";
-list.resize({{w|320}}, 10);
 list.fills = [{type: "SOLID", color: {r: 1, g: 1, b: 1}}];
-list.cornerRadius = 8;
-list.strokes = [{type: "SOLID", color: {r: 0.898, g: 0.906, b: 0.922}}];
+list.cornerRadius = 12;
+list.strokes = [{type: "SOLID", color: {r: 0.910, g: 0.918, b: 0.933}}];
 list.strokeWeight = 1;
 list.clipsContent = true;
 list.x = {{x|0}};
@@ -24,7 +24,7 @@ for (let i = 0; i < items.length; i++) {
     const div = figma.createRectangle();
     div.name = "Divider";
     div.resize(100, 1);
-    div.fills = [{type: "SOLID", color: {r: 0.953, g: 0.957, b: 0.965}}];
+    div.fills = [{type: "SOLID", color: {r: 0.945, g: 0.949, b: 0.957}}];
     list.appendChild(div);
     div.layoutSizingHorizontal = "FILL";
   }
@@ -32,18 +32,28 @@ for (let i = 0; i < items.length; i++) {
   const row = figma.createFrame();
   row.name = items[i];
   row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "AUTO";
+  row.counterAxisSizingMode = "AUTO";
   row.counterAxisAlignItems = "CENTER";
   row.paddingLeft = row.paddingRight = 16;
-  row.paddingTop = row.paddingBottom = 12;
+  row.paddingTop = row.paddingBottom = 14;
   row.fills = [];
 
   const text = figma.createText();
   text.fontName = {family: "Inter", style: "Regular"};
-  text.fontSize = 14;
+  text.fontSize = 15;
+  text.lineHeight = {unit: "PIXELS", value: 22};
   text.characters = items[i];
-  text.fills = [{type: "SOLID", color: {r: 0.067, g: 0.094, b: 0.153}}];
+  text.fills = [{type: "SOLID", color: {r: 0.133, g: 0.157, b: 0.208}}];
   row.appendChild(text);
   text.layoutSizingHorizontal = "FILL";
+
+  const chevron = figma.createText();
+  chevron.fontName = {family: "Inter", style: "Regular"};
+  chevron.fontSize = 14;
+  chevron.characters = "›";
+  chevron.fills = [{type: "SOLID", color: {r: 0.631, g: 0.655, b: 0.698}}];
+  row.appendChild(chevron);
 
   list.appendChild(row);
   row.layoutSizingHorizontal = "FILL";

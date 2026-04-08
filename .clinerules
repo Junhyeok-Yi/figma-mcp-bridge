@@ -79,23 +79,46 @@ When writing `.js` files for `run`:
 
 ### Critical API Rules
 
-1. **`layoutSizingHorizontal = "FILL"`** must be set AFTER appending the node to an auto-layout parent:
+1. **`resize()` MUST come BEFORE `primaryAxisSizingMode = "AUTO"`**.
+   Calling `resize()` after setting auto-sizing resets it to FIXED:
+   ```js
+   // CORRECT — resize first, then set auto-sizing
+   frame.resize(320, 10);
+   frame.layoutMode = "VERTICAL";
+   frame.primaryAxisSizingMode = "AUTO";
+   frame.counterAxisSizingMode = "FIXED";
+
+   // WRONG — resize after auto resets it to FIXED, height stays at 10!
+   frame.layoutMode = "VERTICAL";
+   frame.primaryAxisSizingMode = "AUTO";
+   frame.resize(320, 10);  // ← BREAKS auto-sizing
+   ```
+
+2. **Every auto-layout frame needs EXPLICIT sizing modes.**
+   Default is "FIXED" at 100x100. Always set both:
+   ```js
+   frame.layoutMode = "HORIZONTAL";
+   frame.primaryAxisSizingMode = "AUTO";   // width wraps content
+   frame.counterAxisSizingMode = "AUTO";   // height wraps content
+   ```
+
+3. **`layoutSizingHorizontal = "FILL"`** must be set AFTER appending the node to an auto-layout parent:
    ```js
    parent.appendChild(child);
    child.layoutSizingHorizontal = "FILL";  // Must come after appendChild
    ```
 
-2. **`effects` (DROP_SHADOW)** requires `blendMode`, `spread`, `visible` fields:
+4. **`effects` (DROP_SHADOW)** requires `blendMode`, `spread`, `visible` fields:
    ```js
    node.effects = [{type: "DROP_SHADOW", color: {r:0,g:0,b:0,a:0.1}, offset: {x:0,y:4}, radius: 6, spread: 0, visible: true, blendMode: "NORMAL"}];
    ```
 
-3. **Font loading** must happen before any text manipulation:
+5. **Font loading** must happen before any text manipulation:
    ```js
    await figma.loadFontAsync({family: "Inter", style: "Regular"});
    ```
 
-4. **Node lookup** must use async version:
+6. **Node lookup** must use async version:
    ```js
    const node = await figma.getNodeByIdAsync("1:23");  // NOT figma.getNodeById()
    ```
@@ -106,13 +129,13 @@ When writing `.js` files for `run`:
 ```js
 const card = figma.createFrame();
 card.name = "Card";
-card.resize(320, 0);
-card.layoutMode = "VERTICAL";
-card.primaryAxisSizingMode = "AUTO";
-card.counterAxisSizingMode = "FIXED";
+card.resize(320, 10);           // 1. resize FIRST
+card.layoutMode = "VERTICAL";    // 2. then layout mode
+card.primaryAxisSizingMode = "AUTO";  // 3. then sizing (height auto)
+card.counterAxisSizingMode = "FIXED"; // 4. width stays fixed at 320
 card.paddingLeft = card.paddingRight = card.paddingTop = card.paddingBottom = 16;
 card.itemSpacing = 8;
-card.cornerRadius = 8;
+card.cornerRadius = 12;
 card.fills = [{type: "SOLID", color: {r: 1, g: 1, b: 1}}];
 return card.id;
 ```
