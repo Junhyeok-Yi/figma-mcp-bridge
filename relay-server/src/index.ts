@@ -1,96 +1,9 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { WebSocketServer, WebSocket } from "ws";
-import { randomUUID } from "crypto";
 import { z } from "zod";
+import { startWebSocketServer, sendToFigma, log, CODE_TIMEOUT_MS } from "./ws.js";
 
-const WS_PORT = parseInt(process.env.WS_PORT || "8080", 10);
-const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || "10000", 10);
-const CODE_TIMEOUT_MS = parseInt(process.env.CODE_TIMEOUT_MS || "30000", 10);
-
-// ---------------------------------------------------------------------------
-// State
-// ---------------------------------------------------------------------------
-let figmaClient: WebSocket | null = null;
-const pendingRequests = new Map<
-  string,
-  { resolve: (data: unknown) => void; reject: (err: Error) => void; timer: ReturnType<typeof setTimeout> }
->();
-
-function log(msg: string) {
-  process.stderr.write(`[relay] ${msg}\n`);
-}
-
-// ---------------------------------------------------------------------------
-// WebSocket Server
-// ---------------------------------------------------------------------------
-const wss = new WebSocketServer({ port: WS_PORT });
-
-wss.on("listening", () => {
-  log(`WebSocket server listening on ws://localhost:${WS_PORT}`);
-});
-
-wss.on("connection", (ws) => {
-  log("Figma plugin connected");
-  figmaClient = ws;
-
-  ws.on("message", (raw) => {
-    let msg: { messageId?: string; type?: string; payload?: unknown };
-    try {
-      msg = JSON.parse(raw.toString());
-    } catch {
-      log(`Invalid JSON from Figma: ${raw.toString().slice(0, 200)}`);
-      return;
-    }
-
-    if (msg.messageId && pendingRequests.has(msg.messageId)) {
-      const pending = pendingRequests.get(msg.messageId)!;
-      clearTimeout(pending.timer);
-      pendingRequests.delete(msg.messageId);
-
-      if (msg.type === "ERROR") {
-        pending.reject(new Error(String(msg.payload ?? "Unknown Figma error")));
-      } else {
-        pending.resolve(msg.payload);
-      }
-    } else {
-      log(`Unmatched message from Figma: ${JSON.stringify(msg).slice(0, 300)}`);
-    }
-  });
-
-  ws.on("close", () => {
-    log("Figma plugin disconnected");
-    if (figmaClient === ws) figmaClient = null;
-  });
-
-  ws.on("error", (err) => {
-    log(`WebSocket error: ${err.message}`);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Helper: send a request to Figma and wait for response
-// ---------------------------------------------------------------------------
-function sendToFigma(type: string, payload?: unknown, timeoutMs?: number): Promise<unknown> {
-  return new Promise((resolve, reject) => {
-    if (!figmaClient || figmaClient.readyState !== WebSocket.OPEN) {
-      return reject(
-        new Error("Figma 플러그인이 연결되지 않았습니다. Figma에서 플러그인을 실행하고 연결 버튼을 눌러주세요.")
-      );
-    }
-
-    const messageId = randomUUID();
-    const timeout = timeoutMs ?? REQUEST_TIMEOUT_MS;
-
-    const timer = setTimeout(() => {
-      pendingRequests.delete(messageId);
-      reject(new Error(`Figma 응답 Timeout (${timeout}ms). 플러그인 상태를 확인하세요.`));
-    }, timeout);
-
-    pendingRequests.set(messageId, { resolve, reject, timer });
-    figmaClient.send(JSON.stringify({ messageId, type, payload }));
-  });
-}
+startWebSocketServer();
 
 async function callFigma(type: string, payload?: unknown, timeoutMs?: number) {
   try {

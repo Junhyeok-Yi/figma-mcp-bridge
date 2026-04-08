@@ -4,7 +4,7 @@ figma.showUI(__html__, { width: 340, height: 280, themeColors: true });
 // Helpers
 // ---------------------------------------------------------------------------
 
-function extractNodeData(node: SceneNode): Record<string, unknown> {
+function extractNodeData(node: SceneNode, maxDepth?: number, _depth?: number): Record<string, unknown> {
   const base: Record<string, unknown> = {
     id: node.id,
     name: node.name,
@@ -59,7 +59,14 @@ function extractNodeData(node: SceneNode): Record<string, unknown> {
   }
 
   if ("children" in node) {
-    base.children = (node as ChildrenMixin & SceneNode).children.map(extractNodeData);
+    const d = _depth ?? 0;
+    const ch = (node as ChildrenMixin & SceneNode).children;
+    if (maxDepth !== undefined && d >= maxDepth) {
+      base.childCount = ch.length;
+      base.childSummary = ch.map(c => ({ id: c.id, name: c.name, type: c.type }));
+    } else {
+      base.children = ch.map(c => extractNodeData(c, maxDepth, d + 1));
+    }
   }
 
   if ("cssAsync" in node) {
@@ -170,6 +177,76 @@ function applyProperties(node: SceneNode, properties: Record<string, unknown>): 
 }
 
 // ---------------------------------------------------------------------------
+// Compact response helpers — reduce token usage for LLMs with limited context
+// ---------------------------------------------------------------------------
+
+function rgbToHex(c: { r: number; g: number; b: number }): string {
+  const to = (v: number) => Math.round(v * 255).toString(16).padStart(2, "0");
+  return `#${to(c.r)}${to(c.g)}${to(c.b)}`;
+}
+
+function compactifyPaints(paints: any[]): any[] {
+  return paints.map(p => {
+    if (p.type === "SOLID" && p.color && typeof p.color === "object") {
+      const out: any = { type: "SOLID", color: rgbToHex(p.color) };
+      if (p.opacity !== undefined && p.opacity < 1) out.opacity = +(p.opacity).toFixed(2);
+      return out;
+    }
+    return p;
+  });
+}
+
+function compactify(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { id: data.id, name: data.name, type: data.type };
+
+  if (data.visible === false) out.visible = false;
+  if (data.x !== undefined) out.x = data.x;
+  if (data.y !== undefined) out.y = data.y;
+  if (data.width !== undefined) out.width = data.width;
+  if (data.height !== undefined) out.height = data.height;
+  if (data.rotation && data.rotation !== 0) out.rotation = data.rotation;
+  if (data.opacity !== undefined && data.opacity !== 1) out.opacity = data.opacity;
+
+  if (Array.isArray(data.fills) && data.fills.length > 0) out.fills = compactifyPaints(data.fills);
+  if (Array.isArray(data.strokes) && data.strokes.length > 0) out.strokes = compactifyPaints(data.strokes);
+  if (Array.isArray(data.effects) && data.effects.length > 0) out.effects = data.effects;
+
+  if (data.strokeWeight && data.strokeWeight !== 0) out.strokeWeight = data.strokeWeight;
+  if (data.cornerRadius && data.cornerRadius !== 0) out.cornerRadius = data.cornerRadius;
+
+  if (data.characters !== undefined) {
+    out.characters = data.characters;
+    out.fontSize = data.fontSize;
+    if (data.fontName && typeof data.fontName === "object") {
+      const fn = data.fontName as { family: string; style: string };
+      out.font = `${fn.family}/${fn.style}`;
+    }
+  }
+
+  if (data.layoutMode && data.layoutMode !== "NONE") {
+    out.layoutMode = data.layoutMode;
+    const pt = (data.paddingTop as number) || 0;
+    const pr = (data.paddingRight as number) || 0;
+    const pb = (data.paddingBottom as number) || 0;
+    const pl = (data.paddingLeft as number) || 0;
+    if (pt + pr + pb + pl > 0) out.padding = [pt, pr, pb, pl];
+    if (data.itemSpacing) out.gap = data.itemSpacing;
+    if (data.primaryAxisSizingMode) out.mainSizing = data.primaryAxisSizingMode;
+    if (data.counterAxisSizingMode) out.crossSizing = data.counterAxisSizingMode;
+    if (data.primaryAxisAlignItems) out.mainAlign = data.primaryAxisAlignItems;
+    if (data.counterAxisAlignItems) out.crossAlign = data.counterAxisAlignItems;
+  }
+
+  if (data.childCount !== undefined) out.childCount = data.childCount;
+  if (data.childSummary) out.childSummary = data.childSummary;
+  if (Array.isArray(data.children)) {
+    out.children = (data.children as Record<string, unknown>[]).map(compactify);
+  }
+
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Message handler
 // ---------------------------------------------------------------------------
 
@@ -188,14 +265,19 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
   // READ: Selection
   // ===================================================================
   if (type === "GET_SELECTION") {
+    const compact = msg.payload?.compact ?? false;
+    const depth = msg.payload?.depth as number | undefined;
     const selection = figma.currentPage.selection;
     if (selection.length === 0) {
       reply("SELECTION_RESULT", { error: null, layers: [], message: "선택된 레이어가 없습니다." });
       return;
     }
-    const layers = selection.map(extractNodeData);
-    const cssMap = await getCssForNodes(selection);
-    for (const layer of layers) patchCss(layer, cssMap);
+    let layers: Record<string, unknown>[] = selection.map(n => extractNodeData(n, depth));
+    if (!compact) {
+      const cssMap = await getCssForNodes(selection);
+      for (const layer of layers) patchCss(layer, cssMap);
+    }
+    if (compact) layers = layers.map(compactify);
     reply("SELECTION_RESULT", { error: null, layers });
   }
 
@@ -256,7 +338,7 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
   // ===================================================================
   else if (type === "GET_NODE_BY_ID") {
     try {
-      const { nodeId } = msg.payload;
+      const { nodeId, compact, depth } = msg.payload;
       const node = await figma.getNodeByIdAsync(nodeId);
       if (!node) {
         reply("NODE_RESULT", { error: null, node: null, message: `노드를 찾을 수 없습니다: ${nodeId}` });
@@ -266,9 +348,12 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
         reply("NODE_RESULT", { error: null, node: { id: node.id, name: node.name, type: node.type } });
         return;
       }
-      const data = extractNodeData(node as SceneNode);
-      const cssMap = await getCssForNodes([node as SceneNode]);
-      patchCss(data, cssMap);
+      let data = extractNodeData(node as SceneNode, depth);
+      if (!compact) {
+        const cssMap = await getCssForNodes([node as SceneNode]);
+        patchCss(data, cssMap);
+      }
+      if (compact) data = compactify(data);
       reply("NODE_RESULT", { error: null, node: data });
     } catch (err) {
       replyError("NODE_RESULT", String(err));

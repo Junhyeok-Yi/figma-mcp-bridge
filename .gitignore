@@ -7,6 +7,9 @@ dist/
 # Keep figma plugin build output (code.js) since it's needed for the plugin
 !figma-plugin/code.js
 
+# Keep CLI wrapper at project root
+!figma-cli.js
+
 # OS
 .DS_Store
 Thumbs.db
