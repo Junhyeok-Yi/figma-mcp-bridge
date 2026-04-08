@@ -135,6 +135,45 @@ const texts = figma.currentPage.findAll(n => n.type === "TEXT");
 return texts.map(t => ({id: t.id, name: t.name, text: t.characters}));
 ```
 
+## Templates (fastest way to create UI)
+
+Use templates for common UI patterns — one command, zero code writing:
+
+```
+node figma-cli.js tpl card --title "Card" --desc "Description" --button "Action"
+node figma-cli.js tpl button --text "Submit" --variant primary --size lg
+node figma-cli.js tpl input --label "Email" --placeholder "name@co.com"
+node figma-cli.js tpl list --items "Item 1,Item 2,Item 3"
+node figma-cli.js tpl navbar --title "App" --items "Home,About,Contact"
+node figma-cli.js tpl table --cols "Name,Email" --rows "John,john@test.com;Jane,jane@test.com"
+```
+
+All templates accept `--parent <nodeId>`, `--x`, `--y` flags.
+Use `node figma-cli.js tpl --list` to see all available templates.
+
+## Pre-built Scripts
+
+For complete page layouts, run scripts from the `scripts/` directory:
+
+```
+node figma-cli.js run scripts/login-page.js     # Full login page (1440x900)
+node figma-cli.js run scripts/dashboard.js       # Dashboard with stat cards
+node figma-cli.js run scripts/color-palette.js   # 5-color palette (50 swatches)
+```
+
+## Batch with References
+
+Use `ref` and `$ref.property` to chain operations without intermediate reads:
+
+```json
+[
+  {"type": "CREATE_NODE", "payload": {"nodeType": "FRAME", "properties": {"name": "Parent"}}, "ref": "card"},
+  {"type": "CREATE_NODE", "payload": {"nodeType": "TEXT", "textContent": "Title", "parentId": "$card.nodeId"}}
+]
+```
+
+`$ref.property` works in any payload value — including inside code strings for RUN_CODE.
+
 ## Response Format
 
 All responses are compact JSON by default:

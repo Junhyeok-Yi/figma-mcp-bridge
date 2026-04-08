@@ -192,11 +192,43 @@ const commands = {
     if (!code) throw new Error("Usage: figma-cli eval <code>");
     return api("POST", "/api/run_code", { code });
   },
+
+  async template(args) {
+    const name = args[0];
+    const tplDir = path.join(__dirname, "templates");
+
+    if (!name || name === "--list") {
+      if (!fs.existsSync(tplDir)) return { templates: [] };
+      const files = fs.readdirSync(tplDir).filter(f => f.endsWith(".js")).map(f => f.replace(".js", ""));
+      return { templates: files };
+    }
+
+    const flags = parseFlags(args.slice(1));
+    const tplPath = path.join(tplDir, `${name}.js`);
+
+    if (!fs.existsSync(tplPath)) {
+      const avail = fs.existsSync(tplDir)
+        ? fs.readdirSync(tplDir).filter(f => f.endsWith(".js")).map(f => f.replace(".js", ""))
+        : [];
+      throw new Error(`Template "${name}" not found. Available: ${avail.join(", ")}`);
+    }
+
+    let code = fs.readFileSync(tplPath, "utf-8");
+    code = code.replace(/\{\{(\w+)(?:\|([^}]*))?\}\}/g, (_match, param, defaultVal) => {
+      const val = flags[param];
+      if (val !== undefined) return String(val).replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+      if (defaultVal !== undefined) return defaultVal;
+      throw new Error(`Missing required parameter: --${param}`);
+    });
+
+    return api("POST", "/api/run_code", { code });
+  },
 };
 
 // Aliases
 commands.sel = commands.selection;
 commands.comps = commands.components;
+commands.tpl = commands.template;
 
 // ---------------------------------------------------------------------------
 // Help
@@ -227,6 +259,14 @@ COMMANDS
   run <file.js>                         Execute Figma Plugin API code from file
   eval <code>                           Execute inline code (simple expressions)
   batch <file.json>                     Run batch operations from JSON file
+
+  template | tpl <name> [flags]         Create UI from template
+    card   --title --desc --button --w --parent
+    button --text --variant(primary|secondary|outline) --size(sm|md|lg)
+    input  --label --placeholder --w --parent
+    list   --items "a,b,c" --w --parent
+    navbar --title --items "Home,About" --w
+    table  --cols "Name,Email" --rows "John,john@..." --w
 
 ENVIRONMENT
   FIGMA_API    Base URL (default: http://localhost:3000)

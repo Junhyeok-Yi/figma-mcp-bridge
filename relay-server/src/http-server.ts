@@ -54,7 +54,34 @@ app.post("/api/run_code", (req, res) => {
   handle(res, "RUN_CODE", req.body, CODE_TIMEOUT_MS);
 });
 
-// ===== Batch =====
+// ===== Batch (with $ref variable substitution) =====
+
+function resolveRefs(obj: unknown, refs: Map<string, unknown>): unknown {
+  if (typeof obj === "string") {
+    if (obj.startsWith("$") && !obj.includes(" ")) {
+      const parts = obj.slice(1).split(".");
+      let val: any = refs.get(parts[0]);
+      for (let i = 1; i < parts.length && val != null; i++) val = val[parts[i]];
+      return val;
+    }
+    return obj.replace(/\$(\w+(?:\.\w+)+)/g, (match, refPath) => {
+      const parts = refPath.split(".");
+      let val: any = refs.get(parts[0]);
+      for (let i = 1; i < parts.length && val != null; i++) val = val[parts[i]];
+      return val != null ? String(val) : match;
+    });
+  }
+  if (Array.isArray(obj)) return obj.map(v => resolveRefs(v, refs));
+  if (obj && typeof obj === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+      out[k] = resolveRefs(v, refs);
+    }
+    return out;
+  }
+  return obj;
+}
+
 app.post("/api/batch", async (req, res) => {
   const { operations } = req.body;
   if (!Array.isArray(operations)) {
@@ -62,14 +89,18 @@ app.post("/api/batch", async (req, res) => {
     return;
   }
 
+  const refs = new Map<string, unknown>();
   const results: unknown[] = [];
+
   for (const op of operations) {
     try {
+      const payload = resolveRefs(op.payload, refs);
       const timeout = op.type === "RUN_CODE" ? CODE_TIMEOUT_MS : undefined;
-      const result = await sendToFigma(op.type, op.payload, timeout);
-      results.push({ ok: true, data: result });
+      const result = await sendToFigma(op.type, payload, timeout);
+      if (op.ref) refs.set(op.ref, result);
+      results.push({ ok: true, ref: op.ref || null, data: result });
     } catch (err: any) {
-      results.push({ ok: false, error: err.message });
+      results.push({ ok: false, ref: op.ref || null, error: err.message });
       if (op.stopOnError) break;
     }
   }
