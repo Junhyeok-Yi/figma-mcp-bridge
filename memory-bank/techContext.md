@@ -33,9 +33,17 @@ memory-bank/         — 세션 간 컨텍스트 유지 (6개 핵심 파일)
 |------|--------|------|
 | WS_PORT | 8080 | WebSocket 포트 |
 | HTTP_PORT | 3000 | HTTP API 포트 |
-| REQUEST_TIMEOUT_MS | 10000 | 일반 요청 타임아웃 |
-| CODE_TIMEOUT_MS | 30000 | 코드 실행 타임아웃 |
+| REQUEST_TIMEOUT_MS | 30000 | 일반 요청 타임아웃 (Phase 3에서 10s→30s) |
+| CODE_TIMEOUT_MS | 60000 | 코드 실행 타임아웃 (Phase 3에서 30s→60s) |
 | FIGMA_API | http://localhost:3000 | CLI 연결 주소 |
+
+## 읽기 3단계 (Phase 3)
+
+| Level | CLI 플래그 | 용도 |
+|-------|-----------|------|
+| full | --verbose | 모든 속성 + CSS |
+| smart (기본) | (없음) | compact + _defaults 배열 + auto-truncation(500KB) |
+| skeleton | --skeleton | id/name/type/childCount만 (TEXT는 characters 포함) |
 
 ## 제약사항
 

@@ -10,11 +10,16 @@ const BASE_URL = process.env.FIGMA_API || "http://localhost:3000";
 // HTTP helpers
 // ---------------------------------------------------------------------------
 
+let globalTimeout = null;
+
 async function api(method, urlPath, body) {
   const opts = { method, headers: {} };
   if (body !== undefined) {
     opts.headers["Content-Type"] = "application/json";
     opts.body = JSON.stringify(body);
+  }
+  if (globalTimeout) {
+    opts.signal = AbortSignal.timeout(globalTimeout + 5000);
   }
   const res = await fetch(`${BASE_URL}${urlPath}`, opts);
   const data = await res.json();
@@ -23,6 +28,11 @@ async function api(method, urlPath, body) {
     throw new Error(msg);
   }
   return data;
+}
+
+function appendTimeout(qs) {
+  if (!globalTimeout) return qs;
+  return qs + (qs.includes("?") ? "&" : "?") + `timeout=${globalTimeout}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,9 +115,9 @@ const commands = {
 
   async selection(args) {
     const flags = parseFlags(args || []);
-    const qs = flags.verbose ? "?verbose=1" : "";
-    const depth = flags.depth ? `${qs ? "&" : "?"}depth=${flags.depth}` : "";
-    return api("GET", `/api/selection${qs}${depth}`);
+    let qs = flags.skeleton ? "?skeleton=1" : flags.verbose ? "?verbose=1" : "";
+    if (flags.depth) qs += `${qs ? "&" : "?"}depth=${flags.depth}`;
+    return api("GET", appendTimeout(`/api/selection${qs}`));
   },
 
   async styles() {
@@ -122,9 +132,19 @@ const commands = {
     const id = args[0];
     if (!id) throw new Error("Usage: figma-cli node <nodeId>");
     const flags = parseFlags(args.slice(1));
-    const qs = flags.verbose ? "?verbose=1" : "";
-    const depth = flags.depth ? `${qs ? "&" : "?"}depth=${flags.depth}` : "";
-    return api("GET", `/api/node/${id}${qs}${depth}`);
+    let qs = flags.skeleton ? "?skeleton=1" : flags.verbose ? "?verbose=1" : "";
+    if (flags.depth) qs += `${qs ? "&" : "?"}depth=${flags.depth}`;
+    return api("GET", appendTimeout(`/api/node/${id}${qs}`));
+  },
+
+  async children(args) {
+    const id = args[0];
+    if (!id) throw new Error("Usage: figma-cli children <nodeId> [--offset 0 --limit 20 --depth 1]");
+    const flags = parseFlags(args.slice(1));
+    let qs = `?offset=${flags.offset || 0}&limit=${flags.limit || 20}`;
+    if (flags.depth) qs += `&depth=${flags.depth}`;
+    if (flags.skeleton) qs += "&skeleton=1";
+    return api("GET", appendTimeout(`/api/node/${id}/children${qs}`));
   },
 
   async create(args) {
@@ -243,10 +263,14 @@ USAGE
 
 COMMANDS
   status                                Check Figma connection
-  selection | sel                       Get selected layers
+  selection | sel [--skeleton|--verbose] [--depth N]
+                                        Get selected layers
   styles                                Get local styles
   components | comps                    Get local components
-  node <id>                             Get node by ID
+  node <id> [--skeleton|--verbose] [--depth N]
+                                        Get node by ID
+  children <id> [--offset 0] [--limit 20] [--depth 1]
+                                        Get children with pagination
 
   create <TYPE> [flags]                 Create a node
     --name  --w  --h  --x  --y  --fill "#hex"  --radius  --parent <id>
@@ -268,6 +292,9 @@ COMMANDS
     navbar --title --items "Home,About" --w
     table  --cols "Name,Email" --rows "John,john@..." --w
 
+GLOBAL FLAGS
+  --timeout <ms>                        Override request timeout (default: 30000)
+
 ENVIRONMENT
   FIGMA_API    Base URL (default: http://localhost:3000)
 
@@ -288,7 +315,15 @@ EXAMPLES
 // ---------------------------------------------------------------------------
 
 async function main() {
-  const [cmd, ...args] = process.argv.slice(2);
+  const rawArgs = process.argv.slice(2);
+
+  const timeoutIdx = rawArgs.indexOf("--timeout");
+  if (timeoutIdx !== -1 && rawArgs[timeoutIdx + 1]) {
+    globalTimeout = parseInt(rawArgs[timeoutIdx + 1], 10);
+    rawArgs.splice(timeoutIdx, 2);
+  }
+
+  const [cmd, ...args] = rawArgs;
 
   if (!cmd || cmd === "help" || cmd === "--help" || cmd === "-h") {
     printHelp();

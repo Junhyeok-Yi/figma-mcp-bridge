@@ -29,18 +29,42 @@ app.get("/api/status", (_req, res) => {
 
 // ===== Read =====
 function readOpts(query: Record<string, any>) {
-  const compact = query.verbose !== "1" && query.verbose !== "true";
+  const skeleton = query.skeleton === "1" || query.skeleton === "true";
+  const verbose = query.verbose === "1" || query.verbose === "true";
+  const compact = !verbose && !skeleton;
   const depth = query.depth ? parseInt(query.depth as string, 10) : undefined;
-  return { compact, depth };
+  const timeout = query.timeout ? parseInt(query.timeout as string, 10) : undefined;
+  return { compact, skeleton, depth, timeout };
+}
+
+function readTimeout(query: Record<string, any>): number | undefined {
+  return query.timeout ? parseInt(query.timeout as string, 10) : undefined;
 }
 
 app.get("/api/selection", (req, res) => {
-  handle(res, "GET_SELECTION", readOpts(req.query));
+  const opts = readOpts(req.query);
+  handle(res, "GET_SELECTION", opts, opts.timeout);
 });
-app.get("/api/styles", (_req, res) => handle(res, "GET_STYLES"));
-app.get("/api/components", (_req, res) => handle(res, "GET_COMPONENTS"));
+app.get("/api/styles", (req, res) => handle(res, "GET_STYLES", undefined, readTimeout(req.query)));
+app.get("/api/components", (req, res) => handle(res, "GET_COMPONENTS", undefined, readTimeout(req.query)));
 app.get("/api/node/:id", (req, res) => {
-  handle(res, "GET_NODE_BY_ID", { nodeId: req.params.id, ...readOpts(req.query) });
+  const opts = readOpts(req.query);
+  handle(res, "GET_NODE_BY_ID", { nodeId: req.params.id, ...opts }, opts.timeout);
+});
+
+// ===== Read: Children pagination =====
+app.get("/api/node/:id/children", (req, res) => {
+  const opts = readOpts(req.query);
+  const offset = parseInt((req.query.offset as string) || "0", 10);
+  const limit = parseInt((req.query.limit as string) || "20", 10);
+  handle(res, "GET_CHILDREN_PAGE", {
+    nodeId: req.params.id,
+    offset,
+    limit,
+    depth: opts.depth,
+    compact: opts.compact,
+    skeleton: opts.skeleton,
+  }, opts.timeout);
 });
 
 // ===== Write =====

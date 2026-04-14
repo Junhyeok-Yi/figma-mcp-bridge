@@ -2,8 +2,8 @@ import { WebSocketServer, WebSocket } from "ws";
 import { randomUUID } from "crypto";
 
 export const WS_PORT = parseInt(process.env.WS_PORT || "8080", 10);
-export const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || "10000", 10);
-export const CODE_TIMEOUT_MS = parseInt(process.env.CODE_TIMEOUT_MS || "30000", 10);
+export const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || "30000", 10);
+export const CODE_TIMEOUT_MS = parseInt(process.env.CODE_TIMEOUT_MS || "60000", 10);
 
 let figmaClient: WebSocket | null = null;
 const pendingRequests = new Map<

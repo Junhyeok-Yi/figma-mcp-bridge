@@ -63,7 +63,11 @@ function extractNodeData(node: SceneNode, maxDepth?: number, _depth?: number): R
     const ch = (node as ChildrenMixin & SceneNode).children;
     if (maxDepth !== undefined && d >= maxDepth) {
       base.childCount = ch.length;
-      base.childSummary = ch.map(c => ({ id: c.id, name: c.name, type: c.type }));
+      base.childSummary = ch.map(c => {
+        const s: Record<string, unknown> = { id: c.id, name: c.name, type: c.type };
+        if (c.type === "TEXT") s.characters = (c as TextNode).characters;
+        return s;
+      });
     } else {
       base.children = ch.map(c => extractNodeData(c, maxDepth, d + 1));
     }
@@ -196,16 +200,48 @@ function compactifyPaints(paints: any[]): any[] {
   });
 }
 
+function skeletonify(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { id: data.id, name: data.name, type: data.type };
+  if (data.type === "TEXT" && data.characters !== undefined) {
+    out.characters = data.characters;
+  }
+  if (data.childCount !== undefined) out.childCount = data.childCount;
+  if (data.childSummary) out.childSummary = data.childSummary;
+  if (Array.isArray(data.children)) {
+    out.childCount = (data.children as unknown[]).length;
+    out.childSummary = (data.children as Record<string, unknown>[]).map(c => {
+      const s: Record<string, unknown> = { id: c.id, name: c.name, type: c.type };
+      if (c.type === "TEXT" && c.characters !== undefined) s.characters = c.characters;
+      return s;
+    });
+  }
+  return out;
+}
+
+const COMPACTIFY_DEFAULTS_OMITTED: string[] = ["visible", "opacity", "blendMode", "rotation"];
+
 function compactify(data: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { id: data.id, name: data.name, type: data.type };
 
-  if (data.visible === false) out.visible = false;
+  const defaults: string[] = [];
+  if (data.visible !== false) defaults.push("visible");
+  else out.visible = false;
+
   if (data.x !== undefined) out.x = data.x;
   if (data.y !== undefined) out.y = data.y;
   if (data.width !== undefined) out.width = data.width;
   if (data.height !== undefined) out.height = data.height;
+
   if (data.rotation && data.rotation !== 0) out.rotation = data.rotation;
+  else defaults.push("rotation");
+
   if (data.opacity !== undefined && data.opacity !== 1) out.opacity = data.opacity;
+  else defaults.push("opacity");
+
+  if (data.blendMode && data.blendMode !== "PASS_THROUGH") out.blendMode = data.blendMode;
+  else defaults.push("blendMode");
+
+  if (defaults.length > 0) out._defaults = defaults;
 
   if (Array.isArray(data.fills) && data.fills.length > 0) out.fills = compactifyPaints(data.fills);
   if (Array.isArray(data.strokes) && data.strokes.length > 0) out.strokes = compactifyPaints(data.strokes);
@@ -238,12 +274,51 @@ function compactify(data: Record<string, unknown>): Record<string, unknown> {
   }
 
   if (data.childCount !== undefined) out.childCount = data.childCount;
-  if (data.childSummary) out.childSummary = data.childSummary;
+  if (data.childSummary) {
+    out.childSummary = (data.childSummary as Record<string, unknown>[]).map(c => {
+      const s: Record<string, unknown> = { id: c.id, name: c.name, type: c.type };
+      if (c.type === "TEXT" && c.characters !== undefined) s.characters = c.characters;
+      return s;
+    });
+  }
   if (Array.isArray(data.children)) {
     out.children = (data.children as Record<string, unknown>[]).map(compactify);
   }
 
   return out;
+}
+
+const MAX_CHILDREN_EXPAND = 20;
+const MAX_RESPONSE_BYTES = 500 * 1024;
+
+function autoTruncate(data: Record<string, unknown>): Record<string, unknown> {
+  const json = JSON.stringify(data);
+  if (json.length <= MAX_RESPONSE_BYTES) return data;
+
+  function truncateChildren(node: Record<string, unknown>): Record<string, unknown> {
+    const out = { ...node };
+    if (Array.isArray(out.children)) {
+      const children = out.children as Record<string, unknown>[];
+      if (children.length > MAX_CHILDREN_EXPAND) {
+        const kept = children.slice(0, MAX_CHILDREN_EXPAND).map(truncateChildren);
+        const rest = children.slice(MAX_CHILDREN_EXPAND).map(c => {
+          const s: Record<string, unknown> = { id: c.id, name: c.name, type: c.type };
+          if (c.type === "TEXT" && c.characters !== undefined) s.characters = c.characters;
+          return s;
+        });
+        out.children = kept;
+        out._truncatedChildren = rest;
+        out._notice = `${children.length}개 자식 중 처음 ${MAX_CHILDREN_EXPAND}개만 전개됨. 나머지는 'children <id> --offset ${MAX_CHILDREN_EXPAND}'로 조회 가능.`;
+      } else {
+        out.children = children.map(truncateChildren);
+      }
+    }
+    return out;
+  }
+
+  const result = truncateChildren(data);
+  (result as any).truncated = true;
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -266,6 +341,7 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
   // ===================================================================
   if (type === "GET_SELECTION") {
     const compact = msg.payload?.compact ?? false;
+    const skeleton = msg.payload?.skeleton ?? false;
     const depth = msg.payload?.depth as number | undefined;
     const selection = figma.currentPage.selection;
     if (selection.length === 0) {
@@ -273,11 +349,14 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
       return;
     }
     let layers: Record<string, unknown>[] = selection.map(n => extractNodeData(n, depth));
-    if (!compact) {
+    if (skeleton) {
+      layers = layers.map(skeletonify);
+    } else if (compact) {
+      layers = layers.map(l => autoTruncate(compactify(l)));
+    } else {
       const cssMap = await getCssForNodes(selection);
       for (const layer of layers) patchCss(layer, cssMap);
     }
-    if (compact) layers = layers.map(compactify);
     reply("SELECTION_RESULT", { error: null, layers });
   }
 
@@ -338,7 +417,7 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
   // ===================================================================
   else if (type === "GET_NODE_BY_ID") {
     try {
-      const { nodeId, compact, depth } = msg.payload;
+      const { nodeId, compact, skeleton, depth } = msg.payload;
       const node = await figma.getNodeByIdAsync(nodeId);
       if (!node) {
         reply("NODE_RESULT", { error: null, node: null, message: `노드를 찾을 수 없습니다: ${nodeId}` });
@@ -349,11 +428,14 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
         return;
       }
       let data = extractNodeData(node as SceneNode, depth);
-      if (!compact) {
+      if (skeleton) {
+        data = skeletonify(data);
+      } else if (compact) {
+        data = autoTruncate(compactify(data));
+      } else {
         const cssMap = await getCssForNodes([node as SceneNode]);
         patchCss(data, cssMap);
       }
-      if (compact) data = compactify(data);
       reply("NODE_RESULT", { error: null, node: data });
     } catch (err) {
       replyError("NODE_RESULT", String(err));
@@ -501,6 +583,46 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
       }
     } catch (err) {
       replyError("EXPORT_RESULT", String(err));
+    }
+  }
+
+  // ===================================================================
+  // READ: Get children page (paginated)
+  // ===================================================================
+  else if (type === "GET_CHILDREN_PAGE") {
+    try {
+      const { nodeId, offset = 0, limit = 20, depth, compact, skeleton } = msg.payload;
+      const node = await figma.getNodeByIdAsync(nodeId);
+      if (!node || !("children" in node)) {
+        replyError("CHILDREN_PAGE_RESULT", `자식을 가진 노드가 아닙니다: ${nodeId}`);
+        return;
+      }
+      const parent = node as ChildrenMixin & BaseNode;
+      const total = parent.children.length;
+      const slice = parent.children.slice(offset, offset + limit) as SceneNode[];
+
+      let items: Record<string, unknown>[] = slice.map(n => extractNodeData(n, depth));
+      if (skeleton) {
+        items = items.map(skeletonify);
+      } else if (compact !== false) {
+        items = items.map(compactify);
+      } else {
+        const cssMap = await getCssForNodes(slice);
+        for (const item of items) patchCss(item, cssMap);
+      }
+
+      reply("CHILDREN_PAGE_RESULT", {
+        error: null,
+        parentId: nodeId,
+        total,
+        offset,
+        limit,
+        returned: items.length,
+        hasMore: offset + limit < total,
+        children: items,
+      });
+    } catch (err) {
+      replyError("CHILDREN_PAGE_RESULT", String(err));
     }
   }
 
