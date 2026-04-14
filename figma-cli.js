@@ -243,6 +243,80 @@ const commands = {
 
     return api("POST", "/api/run_code", { code });
   },
+  async pages(args) {
+    const sub = args[0];
+    if (!sub || sub === "list") return api("GET", appendTimeout("/api/pages"));
+    if (sub === "switch") {
+      const target = args[1];
+      if (!target) throw new Error("Usage: figma-cli pages switch <name|id>");
+      const payload = target.includes(":") ? { id: target } : { name: target };
+      return api("POST", "/api/pages/switch", payload);
+    }
+    if (sub === "create") {
+      const name = args[1] || "New Page";
+      return api("POST", "/api/pages/create", { name });
+    }
+    if (sub === "delete") {
+      const target = args[1];
+      if (!target) throw new Error("Usage: figma-cli pages delete <name|id>");
+      const payload = target.includes(":") ? { id: target } : { name: target };
+      return api("POST", "/api/pages/delete", payload);
+    }
+    throw new Error("Usage: figma-cli pages [list|switch|create|delete]");
+  },
+
+  async vars(args) {
+    const sub = args[0];
+    if (!sub || sub === "list") return api("GET", appendTimeout("/api/vars"));
+    if (sub === "collections") return api("GET", appendTimeout("/api/vars/collections"));
+    if (sub === "create") {
+      const flags = parseFlags(args.slice(1));
+      if (!flags.name) throw new Error("Usage: figma-cli vars create --name <name> [--collection <id>] [--type COLOR] [--value ...]");
+      const payload = {
+        name: flags.name,
+        collectionId: flags.collection || undefined,
+        resolvedType: (flags.type || "COLOR").toUpperCase(),
+      };
+      if (flags.value) {
+        if (flags.value.startsWith("#")) {
+          payload.value = hexToRgb(flags.value);
+        } else if (!isNaN(Number(flags.value))) {
+          payload.value = Number(flags.value);
+        } else {
+          payload.value = flags.value;
+        }
+      }
+      return api("POST", "/api/vars/create", payload);
+    }
+    if (sub === "bind") {
+      const flags = parseFlags(args.slice(1));
+      if (!flags.node || !flags.field || !flags.var) {
+        throw new Error("Usage: figma-cli vars bind --node <id> --field fills --var <varId>");
+      }
+      return api("POST", "/api/vars/bind", {
+        nodeId: flags.node,
+        field: flags.field,
+        variableId: flags.var,
+      });
+    }
+    throw new Error("Usage: figma-cli vars [list|collections|create|bind]");
+  },
+
+  async annotate(args) {
+    const nodeId = args[0];
+    if (!nodeId) throw new Error("Usage: figma-cli annotate <nodeId> --label \"text\"");
+    const flags = parseFlags(args.slice(1));
+    if (flags.label) {
+      return api("POST", "/api/annotations", { nodeId, label: flags.label });
+    }
+    return api("GET", appendTimeout(`/api/annotations/${nodeId}`));
+  },
+
+  async annotations(args) {
+    const nodeId = args[0];
+    if (!nodeId) throw new Error("Usage: figma-cli annotations <nodeId>");
+    return api("GET", appendTimeout(`/api/annotations/${nodeId}`));
+  },
 };
 
 // Aliases
@@ -279,6 +353,11 @@ COMMANDS
   modify <id> [flags]                   Modify a node (same flags as create)
   delete <id> [<id> ...]                Delete nodes
   export <id> [--format png --scale 2]  Export as image
+
+  pages [list|switch|create|delete]      Manage pages
+  vars [list|collections|create|bind]   Manage variables
+  annotate <id> --label "text"          Add annotation to node
+  annotations <id>                      Read annotations from node
 
   run <file.js>                         Execute Figma Plugin API code from file
   eval <code>                           Execute inline code (simple expressions)

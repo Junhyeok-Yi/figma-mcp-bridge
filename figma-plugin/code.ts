@@ -627,6 +627,196 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
   }
 
   // ===================================================================
+  // PAGES: List / Switch / Create / Delete
+  // ===================================================================
+  else if (type === "GET_PAGES") {
+    const pages = figma.root.children.map(p => ({
+      id: p.id,
+      name: p.name,
+      childCount: p.children.length,
+      isCurrent: p === figma.currentPage,
+    }));
+    reply("PAGES_RESULT", { error: null, pages });
+  }
+
+  else if (type === "SET_CURRENT_PAGE") {
+    try {
+      const { name, id } = msg.payload;
+      const page = id
+        ? figma.root.children.find(p => p.id === id)
+        : figma.root.children.find(p => p.name === name);
+      if (!page) {
+        replyError("SET_PAGE_RESULT", `페이지를 찾을 수 없습니다: ${name || id}`);
+        return;
+      }
+      await figma.setCurrentPageAsync(page);
+      reply("SET_PAGE_RESULT", { error: null, pageId: page.id, pageName: page.name });
+    } catch (err) {
+      replyError("SET_PAGE_RESULT", String(err));
+    }
+  }
+
+  else if (type === "CREATE_PAGE") {
+    try {
+      const { name } = msg.payload;
+      const page = figma.createPage();
+      page.name = name || "New Page";
+      reply("CREATE_PAGE_RESULT", { error: null, pageId: page.id, pageName: page.name });
+    } catch (err) {
+      replyError("CREATE_PAGE_RESULT", String(err));
+    }
+  }
+
+  else if (type === "DELETE_PAGE") {
+    try {
+      const { name, id } = msg.payload;
+      const page = id
+        ? figma.root.children.find(p => p.id === id)
+        : figma.root.children.find(p => p.name === name);
+      if (!page) {
+        replyError("DELETE_PAGE_RESULT", `페이지를 찾을 수 없습니다: ${name || id}`);
+        return;
+      }
+      if (figma.root.children.length <= 1) {
+        replyError("DELETE_PAGE_RESULT", "마지막 페이지는 삭제할 수 없습니다.");
+        return;
+      }
+      const pageName = page.name;
+      page.remove();
+      reply("DELETE_PAGE_RESULT", { error: null, deleted: pageName });
+    } catch (err) {
+      replyError("DELETE_PAGE_RESULT", String(err));
+    }
+  }
+
+  // ===================================================================
+  // VARIABLES: List / Collections / Create / Set value / Bind
+  // ===================================================================
+  else if (type === "GET_VARIABLES") {
+    try {
+      const collections = await figma.variables.getLocalVariableCollectionsAsync();
+      const result: any[] = [];
+      for (const col of collections) {
+        for (const varId of col.variableIds) {
+          const v = await figma.variables.getVariableByIdAsync(varId);
+          if (!v) continue;
+          result.push({
+            id: v.id,
+            name: v.name,
+            resolvedType: v.resolvedType,
+            collectionId: col.id,
+            collectionName: col.name,
+            valuesByMode: v.valuesByMode,
+          });
+        }
+      }
+      reply("VARIABLES_RESULT", { error: null, variables: result });
+    } catch (err) {
+      replyError("VARIABLES_RESULT", String(err));
+    }
+  }
+
+  else if (type === "GET_VARIABLE_COLLECTIONS") {
+    try {
+      const collections = await figma.variables.getLocalVariableCollectionsAsync();
+      reply("COLLECTIONS_RESULT", {
+        error: null,
+        collections: collections.map(c => ({
+          id: c.id,
+          name: c.name,
+          modes: c.modes,
+          variableCount: c.variableIds.length,
+        })),
+      });
+    } catch (err) {
+      replyError("COLLECTIONS_RESULT", String(err));
+    }
+  }
+
+  else if (type === "CREATE_VARIABLE") {
+    try {
+      const { name, collectionId, resolvedType, value, modeId } = msg.payload;
+      let colId = collectionId;
+      if (!colId) {
+        const cols = await figma.variables.getLocalVariableCollectionsAsync();
+        if (cols.length === 0) {
+          const newCol = figma.variables.createVariableCollection("Design Tokens");
+          colId = newCol.id;
+        } else {
+          colId = cols[0].id;
+        }
+      }
+      const variable = figma.variables.createVariable(name, colId, resolvedType || "COLOR");
+      if (value !== undefined) {
+        const col = await figma.variables.getVariableCollectionByIdAsync(colId);
+        const mid = modeId || col?.modes[0]?.modeId;
+        if (mid) variable.setValueForMode(mid, value);
+      }
+      reply("CREATE_VARIABLE_RESULT", { error: null, variableId: variable.id, name: variable.name });
+    } catch (err) {
+      replyError("CREATE_VARIABLE_RESULT", String(err));
+    }
+  }
+
+  else if (type === "BIND_VARIABLE") {
+    try {
+      const { nodeId, field, variableId } = msg.payload;
+      const node = await figma.getNodeByIdAsync(nodeId);
+      if (!node) {
+        replyError("BIND_VARIABLE_RESULT", `노드를 찾을 수 없습니다: ${nodeId}`);
+        return;
+      }
+      const variable = await figma.variables.getVariableByIdAsync(variableId);
+      if (!variable) {
+        replyError("BIND_VARIABLE_RESULT", `변수를 찾을 수 없습니다: ${variableId}`);
+        return;
+      }
+      (node as SceneNode).setBoundVariable(field, variable);
+      reply("BIND_VARIABLE_RESULT", { error: null, nodeId, field, variableId });
+    } catch (err) {
+      replyError("BIND_VARIABLE_RESULT", String(err));
+    }
+  }
+
+  // ===================================================================
+  // ANNOTATIONS: Get / Set
+  // ===================================================================
+  else if (type === "GET_ANNOTATIONS") {
+    try {
+      const { nodeId } = msg.payload;
+      const node = await figma.getNodeByIdAsync(nodeId);
+      if (!node) {
+        replyError("ANNOTATIONS_RESULT", `노드를 찾을 수 없습니다: ${nodeId}`);
+        return;
+      }
+      const annotations = (node as any).annotations || [];
+      reply("ANNOTATIONS_RESULT", { error: null, nodeId, annotations: JSON.parse(JSON.stringify(annotations)) });
+    } catch (err) {
+      replyError("ANNOTATIONS_RESULT", String(err));
+    }
+  }
+
+  else if (type === "SET_ANNOTATIONS") {
+    try {
+      const { nodeId, label, annotations } = msg.payload;
+      const node = await figma.getNodeByIdAsync(nodeId);
+      if (!node) {
+        replyError("SET_ANNOTATIONS_RESULT", `노드를 찾을 수 없습니다: ${nodeId}`);
+        return;
+      }
+      if (label) {
+        const existing = (node as any).annotations || [];
+        (node as any).annotations = [...existing, { label }];
+      } else if (annotations) {
+        (node as any).annotations = annotations;
+      }
+      reply("SET_ANNOTATIONS_RESULT", { error: null, nodeId, count: ((node as any).annotations || []).length });
+    } catch (err) {
+      replyError("SET_ANNOTATIONS_RESULT", String(err));
+    }
+  }
+
+  // ===================================================================
   // UNIVERSAL: Run arbitrary Figma Plugin API code
   // ===================================================================
   else if (type === "RUN_CODE") {

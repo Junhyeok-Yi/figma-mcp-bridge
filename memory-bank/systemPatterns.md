@@ -13,10 +13,12 @@ Mode A (MCP, 비활성):
 ## 핵심 패턴
 
 - **WebSocket 공유**: ws.ts가 MCP/HTTP 양쪽에서 공통 사용
-- **Compact 응답**: RGB→HEX, 기본값 생략, _defaults 배열, depth 제한 → 토큰 63% 절감
+- **Compact 3단계**: skeleton(구조만) / smart(기본, _defaults) / full(verbose+CSS)
+- **auto-truncation**: 500KB 초과 시 자식 20개만 전개 + _notice
 - **파일 기반 실행**: `run <file.js>`로 JSON 이스케이프 문제 회피
 - **배치 참조**: `$ref.nodeId`로 이전 작업 결과를 다음 작업에서 사용
 - **템플릿 API**: `tpl card --title "..."` 한 줄로 컴포넌트 생성
+- **전용 opcode**: Pages, Variables, Annotations에 CLI 래퍼 제공 (모델 실수 방지)
 
 ## 하네스 3계층
 

@@ -11,14 +11,13 @@
 - [x] Phase 1: 하네스 체계화 — Rules 3개 + Workflows 4개 + Skills 5개
 - [x] Phase 2: Memory Bank 도입 — 6개 핵심 파일 + 규칙 + 워크플로우
 - [x] Phase 3: 읽기 안정화 — 타임아웃 30s/60s, compact 3단계, _defaults, TEXT 보호, auto-truncation, children 페이지네이션
+- [x] Phase 4: Figma API 확장 — Pages/Variables/Annotations opcode + CLI 명령 + 헬퍼 스크립트 4개
 
 ## 진행 중
 
 - [ ] feature/phase1-harness → main 머지
 
 ## 미완료
-
-- [ ] Phase 4: Figma API 확장 (Pages, Variables, Annotations CLI 명령 + 헬퍼 스크립트)
 - [ ] Phase 5: DESIGN.md 표준화 (design-system.md → DESIGN.md 통합)
 - [ ] Phase 6: 벤치마크 검증 (프레임 5개 + MB 세션 복원 테스트)
 
