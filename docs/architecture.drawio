@@ -1,0 +1,668 @@
+<mxfile host="app.diagrams.net" pages="3">
+  <diagram id="page1" name="1. 전체 아키텍처">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Title -->
+        <mxCell id="title1" value="Figma MCP Bridge — 전체 아키텍처 (Phase 6 완료 후)" style="text;html=1;fontSize=20;fontStyle=1;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="500" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ===================== -->
+        <!-- AI SESSION FLOW (Top) -->
+        <!-- ===================== -->
+        <mxCell id="session-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;arcSize=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="1520" height="260" as="geometry"/>
+        </mxCell>
+        <mxCell id="session-title" value="AI 세션 라이프사이클" style="text;html=1;fontSize=14;fontStyle=1;align=left;verticalAlign=top;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="85" width="200" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Step 0: Rules (system prompt, invisible) -->
+        <mxCell id="s0" value="&lt;b&gt;⓪ Rules 자동 주입&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;시스템 프롬프트 레벨&lt;br&gt;main.md + 조건부 규칙&lt;br&gt;(사용자에게 보이지 않음)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;arcSize=12;strokeDasharray=4;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="200" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Step 1: Read MB -->
+        <mxCell id="s1" value="&lt;b&gt;① Memory Bank 읽기&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;projectbrief → activeContext&lt;br&gt;→ progress → (필요 시 나머지)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="320" y="120" width="200" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Step 2: Work -->
+        <mxCell id="s2" value="&lt;b&gt;② 작업 수행&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Workflow 실행&lt;br&gt;Skill 온디맨드 로드&lt;br&gt;CLI로 Figma 제어&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="580" y="120" width="200" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Step 3: Update MB -->
+        <mxCell id="s3" value="&lt;b&gt;③ Memory Bank 갱신&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;activeContext.md 갱신&lt;br&gt;progress.md 갱신&lt;br&gt;(자동 또는 수동 트리거)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="840" y="120" width="200" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Step 4: Next Session -->
+        <mxCell id="s4" value="&lt;b&gt;④ 다음 세션&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;&quot;follow your custom&lt;br&gt;instructions&quot; → ⓪으로 복귀&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="120" width="200" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Hidden: keep s5 id for backward compat -->
+        <mxCell id="s5" value="" style="opacity=0;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="0" height="0" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrows between steps -->
+        <mxCell id="a01" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333333;" edge="1" source="s0" target="s1" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333333;" edge="1" source="s1" target="s2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a23" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333333;" edge="1" source="s2" target="s3" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="a34" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333333;" edge="1" source="s3" target="s4" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <!-- Loop back arrow -->
+        <mxCell id="a40" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#9673a6;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" source="s4" target="s0" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1200" y="280"/>
+              <mxPoint x="160" y="280"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="loop-label" value="세션 리셋 → ⓪ Rules 재주입 + ① Memory Bank로 복원" style="text;html=1;fontSize=10;fontStyle=2;align=center;fillColor=none;strokeColor=none;fontColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="450" y="260" width="380" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Legend boxes under session -->
+        <mxCell id="leg-mb" value="Memory Bank" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="100" width="100" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg-rule" value="Rules" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="130" width="100" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg-wf" value="Workflows/Skills" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="160" width="100" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="leg-infra" value="Infrastructure" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="190" width="100" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- ============================= -->
+        <!-- DATA PIPELINE (Bottom section) -->
+        <!-- ============================= -->
+        <mxCell id="pipe-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;dashed=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="370" width="1520" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="pipe-title" value="데이터 파이프라인 (Mode B: HTTP + CLI)" style="text;html=1;fontSize=14;fontStyle=1;align=left;verticalAlign=top;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="375" width="350" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Cline/AI -->
+        <mxCell id="p-cline" value="&lt;b&gt;Cline (AI)&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;하네스 주입 상태&lt;br&gt;MB 컨텍스트 보유&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="420" width="160" height="70" as="geometry"/>
+        </mxCell>
+
+        <!-- figma-cli.js -->
+        <mxCell id="p-cli" value="&lt;b&gt;figma-cli.js&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;CLI 래퍼&lt;br&gt;JSON 이스케이프 해결&lt;br&gt;tpl / run / batch / eval&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="320" y="410" width="180" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- HTTP Server -->
+        <mxCell id="p-http" value="&lt;b&gt;HTTP Server&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Express :3000&lt;br&gt;REST API&lt;br&gt;batch w/ $ref&lt;br&gt;auto-truncation&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="600" y="410" width="180" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- WebSocket -->
+        <mxCell id="p-ws" value="&lt;b&gt;WebSocket&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;ws.ts :8080&lt;br&gt;공유 모듈&lt;br&gt;(MCP/HTTP 공통)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="880" y="410" width="160" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Figma Plugin -->
+        <mxCell id="p-figma" value="&lt;b&gt;Figma Plugin&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;code.ts + ui.html&lt;br&gt;extractNodeData&lt;br&gt;compactify&lt;br&gt;Figma Plugin API&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;arcSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="410" width="170" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Figma Desktop -->
+        <mxCell id="p-desktop" value="&lt;b&gt;Figma Desktop&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffccff;strokeColor=#ae4132;arcSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1390" y="430" width="140" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Pipeline arrows -->
+        <mxCell id="pa1" value="shell cmd" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333;fontSize=10;" edge="1" source="p-cline" target="p-cli" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="pa2" value="HTTP fetch" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333;fontSize=10;" edge="1" source="p-cli" target="p-http" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="pa3" value="sendToFigma()" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333;fontSize=10;" edge="1" source="p-http" target="p-ws" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="pa4" value="ws://8080" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333;fontSize=10;" edge="1" source="p-ws" target="p-figma" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="pa5" value="Plugin API" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#333;fontSize=10;" edge="1" source="p-figma" target="p-desktop" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase 3 additions label -->
+        <mxCell id="p3-label" value="Phase 3: timeout 조정, truncation, children 페이지네이션" style="text;html=1;fontSize=9;fontStyle=2;align=center;fillColor=none;strokeColor=none;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="510" width="350" height="15" as="geometry"/>
+        </mxCell>
+        <!-- Phase 4 additions label -->
+        <mxCell id="p4-label" value="Phase 4: Pages, Variables, Annotations 명령 추가" style="text;html=1;fontSize=9;fontStyle=2;align=center;fillColor=none;strokeColor=none;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="528" width="350" height="15" as="geometry"/>
+        </mxCell>
+
+        <!-- ============================= -->
+        <!-- HARNESS LAYERS (Bottom)       -->
+        <!-- ============================= -->
+        <mxCell id="harness-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#999999;dashed=1;arcSize=6;" vertex="1" parent="1">
+          <mxGeometry x="40" y="600" width="740" height="370" as="geometry"/>
+        </mxCell>
+        <mxCell id="harness-title" value="하네스 3계층 (Phase 1 ✅)" style="text;html=1;fontSize=14;fontStyle=1;align=left;verticalAlign=top;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="605" width="300" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Layer 1: Rules -->
+        <mxCell id="h-rules-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="60" y="640" width="700" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-rules-label" value="&lt;b&gt;Rules&lt;/b&gt; — 매 요청 자동 주입 (~3-5K tokens)" style="text;html=1;fontSize=11;fontStyle=0;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="70" y="642" width="300" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-r1" value="main.md&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;글로벌 제약&lt;br&gt;+ MB 규칙&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="665" width="100" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-r2" value="figma-read.md&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;조건부: 읽기 전략&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="200" y="665" width="120" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-r3" value="figma-write.md&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;조건부: 쓰기 API&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="340" y="665" width="120" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- Layer 2: Workflows -->
+        <mxCell id="h-wf-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="60" y="745" width="700" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-wf-label" value="&lt;b&gt;Workflows&lt;/b&gt; — / 명령 트리거, 멀티스텝 자동화" style="text;html=1;fontSize=11;fontStyle=0;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="70" y="747" width="300" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-w1" value="ux-review" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="772" width="90" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-w2" value="a11y-audit" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="185" y="772" width="90" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-w3" value="mobile-adapt" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="290" y="772" width="100" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-w4" value="register-colors" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="405" y="772" width="110" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-w5" value="&lt;font style=&quot;font-size:9px&quot;&gt;update-&lt;br&gt;memory-bank&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px;color:#6c8ebf&quot;&gt;Phase 2&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#6c8ebf;fontSize=10;strokeWidth=2;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="530" y="772" width="100" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Layer 3: Skills -->
+        <mxCell id="h-sk-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;opacity=30;" vertex="1" parent="1">
+          <mxGeometry x="60" y="850" width="700" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-sk-label" value="&lt;b&gt;Skills&lt;/b&gt; — 온디맨드 자동 감지, 전문 지식 (~5K tokens)" style="text;html=1;fontSize=11;fontStyle=0;align=left;fillColor=none;strokeColor=none;" vertex="1" parent="1">
+          <mxGeometry x="70" y="852" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-s1" value="figma-bridge&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;CLI 사용법&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="80" y="878" width="100" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-s2" value="figma-variables&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;Variables API&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="195" y="878" width="110" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-s3" value="a11y-guide&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;WCAG 2.1 AA&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="320" y="878" width="100" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-s4" value="ux-principles&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;Nielsen 10&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="435" y="878" width="100" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="h-s5" value="design-system&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;토큰 매핑&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe0b2;strokeColor=#e65100;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="550" y="878" width="100" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- ========================= -->
+        <!-- MEMORY BANK (Right side)  -->
+        <!-- ========================= -->
+        <mxCell id="mb-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f4fd;strokeColor=#6c8ebf;dashed=1;arcSize=6;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="820" y="600" width="740" height="370" as="geometry"/>
+        </mxCell>
+        <mxCell id="mb-title" value="Memory Bank (Phase 2)" style="text;html=1;fontSize=14;fontStyle=1;align=left;verticalAlign=top;fillColor=none;strokeColor=none;fontColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="840" y="605" width="250" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="mb-sub" value="세션 간 프로젝트 컨텍스트 유지" style="text;html=1;fontSize=10;fontStyle=2;align=left;fillColor=none;strokeColor=none;fontColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="840" y="625" width="250" height="15" as="geometry"/>
+        </mxCell>
+
+        <!-- MB Files -->
+        <mxCell id="mb1" value="&lt;b&gt;projectbrief.md&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;프로젝트 정의 · 목표 · 범위&lt;br&gt;🔒 거의 불변&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="840" y="650" width="220" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="mb2" value="&lt;b&gt;productContext.md&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;존재 이유 · 해결 문제 · UX 목표&lt;br&gt;📝 드물게 갱신&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="650" width="230" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="mb3" value="&lt;b&gt;activeContext.md&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;현재 작업 초점 · 최근 변경 · 다음 단계&lt;br&gt;🔄 매 세션 갱신 (가장 빈번)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=10;align=left;spacingLeft=8;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="840" y="720" width="250" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="mb4" value="&lt;b&gt;progress.md&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;완료/미완료 현황 · 알려진 이슈&lt;br&gt;🔄 매 마일스톤 갱신&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=10;align=left;spacingLeft=8;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="1110" y="720" width="230" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="mb5" value="&lt;b&gt;systemPatterns.md&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;아키텍처 · 패턴 · 컴포넌트 관계&lt;br&gt;📝 구조 변경 시 갱신&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="840" y="800" width="230" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="mb6" value="&lt;b&gt;techContext.md&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;기술 스택 · 셋업 · 제약사항&lt;br&gt;📝 스택 변경 시 갱신&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="1090" y="800" width="220" height="55" as="geometry"/>
+        </mxCell>
+
+        <!-- Extras area -->
+        <mxCell id="mb-extras" value="&lt;b&gt;확장 가능&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;figma-file-map.md (노드 ID 맵)&lt;br&gt;design-decisions.md (결정 이력)&lt;br&gt;필요 시 추가&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f4fd;strokeColor=#6c8ebf;fontSize=10;align=left;spacingLeft=8;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="840" y="875" width="470" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- clineignore label -->
+        <mxCell id="clineignore" value="&lt;b&gt;.clineignore&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;node_modules, dist,&lt;br&gt;package-lock.json 제외&lt;br&gt;→ 컨텍스트 효율화&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="1330" y="875" width="200" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Connection: Harness <-> MB -->
+        <mxCell id="conn-hm" value="Rules가 MB 참조 규칙 포함" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#6c8ebf;dashed=1;fontSize=9;fontColor=#6c8ebf;" edge="1" source="h-r1" target="mb3" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="130" y="750"/>
+              <mxPoint x="800" y="750"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="page2" name="2. 프로젝트 파일 구조">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title2" value="Phase 6 완료 후 프로젝트 파일 구조" style="text;html=1;fontSize=20;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="300" y="20" width="500" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Root -->
+        <mxCell id="root" value="&lt;b&gt;figma-mcp-bridge/&lt;/b&gt;" style="text;html=1;fontSize=13;fontStyle=0;align=left;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="50" y="70" width="200" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== Memory Bank ===== -->
+        <mxCell id="f-mb-bg" value="" style="rounded=1;fillColor=#e8f4fd;strokeColor=#6c8ebf;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="50" y="95" width="380" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-mb-h" value="📦 memory-bank/                    Phase 2" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#1565c0;align=left;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="360" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-mb-1" value="├── projectbrief.md         프로젝트 정의 (불변)" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="125" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-mb-2" value="├── productContext.md       존재 이유, UX 목표" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="145" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-mb-3" value="├── &lt;b&gt;activeContext.md&lt;/b&gt;       현재 초점 (매 세션)" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="165" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-mb-4" value="├── systemPatterns.md       아키텍처, 패턴" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="185" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-mb-5" value="├── techContext.md           기술 스택, 제약" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="205" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-mb-6" value="└── &lt;b&gt;progress.md&lt;/b&gt;             완료/미완료 (매 마일스톤)" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="225" width="380" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== .clinerules ===== -->
+        <mxCell id="f-cr-bg" value="" style="rounded=1;fillColor=#e8f5e9;strokeColor=#82b366;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="50" y="300" width="380" height="270" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-h" value="📋 .clinerules/                     Phase 1 ✅" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#2e7d32;align=left;" vertex="1" parent="1">
+          <mxGeometry x="60" y="305" width="360" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-1" value="├── main.md                 글로벌 제약 + MB 규칙" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="330" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-2" value="├── figma-read.md           조건부: 읽기 전략" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="350" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-3" value="├── figma-write.md          조건부: 쓰기 API" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="370" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-wf" value="└── workflows/" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="395" width="200" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-w1" value="    ├── ux-review.md       Nielsen UX 리뷰" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="418" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-w2" value="    ├── a11y-audit.md      WCAG 접근성 감사" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="438" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-w3" value="    ├── mobile-adapt.md    모바일 전환" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="458" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-w4" value="    ├── register-colors.md 색상 변수 등록" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="478" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cr-w5" value="    └── &lt;font color=&quot;#1565c0&quot;&gt;update-memory-bank.md&lt;/font&gt;  &lt;font color=&quot;#1565c0&quot;&gt;Phase 2&lt;/font&gt;" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="498" width="380" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== .cline/skills ===== -->
+        <mxCell id="f-sk-bg" value="" style="rounded=1;fillColor=#fff3e0;strokeColor=#e65100;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="50" y="585" width="380" height="170" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-sk-h" value="🧠 .cline/skills/                   Phase 1 ✅" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#e65100;align=left;" vertex="1" parent="1">
+          <mxGeometry x="60" y="590" width="360" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-sk-1" value="├── figma-bridge/SKILL.md    CLI 전체 사용법" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="618" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-sk-2" value="├── figma-variables/SKILL.md Variables API" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="638" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-sk-3" value="├── a11y-guide/SKILL.md      WCAG 체크리스트" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="658" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-sk-4" value="├── ux-principles/SKILL.md   Nielsen 10" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="678" width="350" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-sk-5" value="└── design-system/SKILL.md   토큰 매핑 가이드" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="70" y="698" width="350" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== Relay Server ===== -->
+        <mxCell id="f-rs-bg" value="" style="rounded=1;fillColor=#fce4ec;strokeColor=#b85450;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="480" y="95" width="430" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-rs-h" value="⚙️ relay-server/src/                Phase 3 · 4" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#b85450;align=left;" vertex="1" parent="1">
+          <mxGeometry x="490" y="100" width="400" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-rs-1" value="├── ws.ts               WebSocket 공유 모듈" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="125" width="390" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-rs-1a" value="│   &lt;font color=&quot;#b85450&quot;&gt;+ timeout 30s/60s&lt;/font&gt;                  Phase 3A" style="text;html=1;fontSize=10;fontFamily=Courier New;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="143" width="390" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-rs-2" value="├── http-server.ts      Express HTTP 서버" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="163" width="390" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-rs-2a" value="│   &lt;font color=&quot;#b85450&quot;&gt;+ children, pages, vars, annotate&lt;/font&gt;  Phase 3C·4" style="text;html=1;fontSize=10;fontFamily=Courier New;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="181" width="400" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-rs-3" value="└── index.ts            MCP 엔트리 (비활성)" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;fontColor=#999;" vertex="1" parent="1">
+          <mxGeometry x="500" y="200" width="390" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== Figma Plugin ===== -->
+        <mxCell id="f-fp-bg" value="" style="rounded=1;fillColor=#fce4ec;strokeColor=#b85450;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="480" y="300" width="430" height="165" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-fp-h" value="🔌 figma-plugin/                    Phase 3 · 4" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#b85450;align=left;" vertex="1" parent="1">
+          <mxGeometry x="490" y="305" width="400" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-fp-1" value="├── code.ts             Plugin main" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="330" width="390" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-fp-1a" value="│   &lt;font color=&quot;#b85450&quot;&gt;+ compact 3단계, auto-truncation&lt;/font&gt;  Phase 3B" style="text;html=1;fontSize=10;fontFamily=Courier New;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="348" width="400" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-fp-1b" value="│   &lt;font color=&quot;#b85450&quot;&gt;+ CHILDREN_PAGE, PAGES, VARS, ANNOT&lt;/font&gt; Phase 3C·4" style="text;html=1;fontSize=10;fontFamily=Courier New;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="364" width="410" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-fp-2" value="├── ui.html             Plugin UI (WS client)" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="385" width="390" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-fp-3" value="└── manifest.json       Plugin 매니페스트" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="405" width="390" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- ===== CLI + Templates + Scripts ===== -->
+        <mxCell id="f-cli-bg" value="" style="rounded=1;fillColor=#fce4ec;strokeColor=#b85450;opacity=40;" vertex="1" parent="1">
+          <mxGeometry x="480" y="480" width="430" height="275" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cli-h" value="🛠️ CLI + 리소스                     Phase 0~4" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#b85450;align=left;" vertex="1" parent="1">
+          <mxGeometry x="490" y="485" width="400" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cli-1" value="figma-cli.js                CLI 래퍼 (project root)" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="510" width="390" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-cli-1a" value="&lt;font color=&quot;#b85450&quot;&gt;  + --timeout, children, pages, vars&lt;/font&gt;  Phase 3·4" style="text;html=1;fontSize=10;fontFamily=Courier New;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="528" width="400" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-tpl" value="templates/                  UI 템플릿 6개" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="552" width="390" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-tpl-d" value="  card · button · input · list · navbar · table" style="text;html=1;fontSize=10;fontFamily=Courier New;align=left;fontColor=#666;" vertex="1" parent="1">
+          <mxGeometry x="500" y="570" width="390" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-scr" value="scripts/                    예제 + 헬퍼 스크립트" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="594" width="390" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-scr-d1" value="  login-page · dashboard · color-palette" style="text;html=1;fontSize=10;fontFamily=Courier New;align=left;fontColor=#666;" vertex="1" parent="1">
+          <mxGeometry x="500" y="612" width="390" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-scr-d2" value="  &lt;font color=&quot;#b85450&quot;&gt;+ create-instance · set-reactions&lt;/font&gt;       Phase 4D" style="text;html=1;fontSize=10;fontFamily=Courier New;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="628" width="400" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-scr-d3" value="  &lt;font color=&quot;#b85450&quot;&gt;+ boolean-ops · create-style&lt;/font&gt;            Phase 4D" style="text;html=1;fontSize=10;fontFamily=Courier New;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="644" width="400" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- Root files -->
+        <mxCell id="f-root-files" value="" style="rounded=1;fillColor=#f5f5f5;strokeColor=#999;opacity=50;" vertex="1" parent="1">
+          <mxGeometry x="480" y="770" width="430" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-root-h" value="📄 루트 파일" style="text;html=1;fontSize=12;fontStyle=1;fontColor=#666;align=left;" vertex="1" parent="1">
+          <mxGeometry x="490" y="775" width="200" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-design" value="&lt;font color=&quot;#b85450&quot;&gt;DESIGN.md&lt;/font&gt;                   디자인 시스템 SSoT  Phase 5" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="800" width="400" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-clineignore" value="&lt;font color=&quot;#1565c0&quot;&gt;.clineignore&lt;/font&gt;                컨텍스트 효율화    Phase 2" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="820" width="400" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-readme" value="README.md                   설치/사용 가이드" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;" vertex="1" parent="1">
+          <mxGeometry x="500" y="840" width="390" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="f-gitignore" value=".gitignore" style="text;html=1;fontSize=11;fontFamily=Courier New;align=left;fontColor=#999;" vertex="1" parent="1">
+          <mxGeometry x="500" y="860" width="200" height="18" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase labels on right side -->
+        <mxCell id="phase-legend-bg" value="" style="rounded=1;fillColor=#fafafa;strokeColor=#ccc;" vertex="1" parent="1">
+          <mxGeometry x="960" y="95" width="380" height="310" as="geometry"/>
+        </mxCell>
+        <mxCell id="phase-legend-title" value="Phase별 추가/변경 요약" style="text;html=1;fontSize=14;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="960" y="100" width="380" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="pl-0" value="&lt;b&gt;Phase 0&lt;/b&gt; (기존) — 초기 구현, CLI, 템플릿, 스크립트" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="975" y="135" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-1" value="&lt;font color=&quot;#2e7d32&quot;&gt;&lt;b&gt;Phase 1 ✅&lt;/b&gt; — .clinerules/ + .cline/skills/ 체계화&lt;/font&gt;" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="975" y="160" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-2" value="&lt;font color=&quot;#1565c0&quot;&gt;&lt;b&gt;Phase 2&lt;/b&gt; — memory-bank/ 6파일 + .clineignore&lt;/font&gt;" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="975" y="185" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-2d" value="    + update-memory-bank 워크플로우" style="text;html=1;fontSize=10;align=left;fontColor=#1565c0;" vertex="1" parent="1">
+          <mxGeometry x="975" y="201" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-2e" value="    + main.md에 MB 참조 규칙 추가" style="text;html=1;fontSize=10;align=left;fontColor=#1565c0;" vertex="1" parent="1">
+          <mxGeometry x="975" y="217" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-3" value="&lt;font color=&quot;#b85450&quot;&gt;&lt;b&gt;Phase 3&lt;/b&gt; — ws.ts 타임아웃, code.ts truncation,&lt;/font&gt;" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="975" y="242" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-3d" value="    compact 3단계, children 페이지네이션" style="text;html=1;fontSize=10;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="975" y="258" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-4" value="&lt;font color=&quot;#b85450&quot;&gt;&lt;b&gt;Phase 4&lt;/b&gt; — Pages/Variables/Annotations 명령,&lt;/font&gt;" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="975" y="283" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-4d" value="    헬퍼 스크립트 4개 추가" style="text;html=1;fontSize=10;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="975" y="299" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-5" value="&lt;font color=&quot;#b85450&quot;&gt;&lt;b&gt;Phase 5&lt;/b&gt; — design-system.md → DESIGN.md 통합&lt;/font&gt;" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="975" y="324" width="350" height="16" as="geometry"/>
+        </mxCell>
+        <mxCell id="pl-6" value="&lt;b&gt;Phase 6&lt;/b&gt; — 벤치마크 검증 (파일 변경 없음, 테스트만)" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
+          <mxGeometry x="975" y="349" width="350" height="16" as="geometry"/>
+        </mxCell>
+
+        <!-- File count -->
+        <mxCell id="file-count" value="&lt;b&gt;총 파일 수 (Phase 6 완료 후)&lt;/b&gt;&lt;br&gt;&lt;br&gt;Memory Bank: 6개&lt;br&gt;Rules: 3개&lt;br&gt;Workflows: 5개 (+1)&lt;br&gt;Skills: 5개&lt;br&gt;Relay Server: 3개&lt;br&gt;Figma Plugin: 4개&lt;br&gt;CLI: 1개&lt;br&gt;Templates: 6개&lt;br&gt;Scripts: 7개 (+4)&lt;br&gt;Root: 4개 (+1 .clineignore)&lt;br&gt;&lt;br&gt;&lt;b&gt;합계: ~44개 파일&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#ccc;fontSize=10;align=left;spacingLeft=12;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="960" y="430" width="220" height="270" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="page3" name="3. Phase 로드맵">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title3" value="Phase 로드맵 — 구현 순서 &amp; 의존관계" style="text;html=1;fontSize=20;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="350" y="20" width="450" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase 1 -->
+        <mxCell id="ph1" value="&lt;b&gt;Phase 1&lt;/b&gt;&lt;br&gt;하네스 체계화&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Rules · Workflows · Skills&lt;br&gt;13개 파일&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c8e6c9;strokeColor=#2e7d32;arcSize=12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="100" width="180" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="ph1-check" value="✅ 완료" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#2e7d32;align=center;" vertex="1" parent="1">
+          <mxGeometry x="120" y="195" width="100" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase 2 -->
+        <mxCell id="ph2" value="&lt;b&gt;Phase 2&lt;/b&gt;&lt;br&gt;Memory Bank&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;6개 핵심 파일 + .clineignore&lt;br&gt;+ MB 규칙/워크플로우&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;arcSize=12;fontSize=12;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="340" y="100" width="200" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="ph2-status" value="◀ 다음" style="text;html=1;fontSize=14;fontStyle=1;fontColor=#1565c0;align=center;" vertex="1" parent="1">
+          <mxGeometry x="390" y="195" width="100" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase 3 -->
+        <mxCell id="ph3" value="&lt;b&gt;Phase 3&lt;/b&gt;&lt;br&gt;읽기 안정화&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;timeout · truncation&lt;br&gt;compact 3단계 · children&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#b85450;arcSize=12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="100" width="180" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase 4 -->
+        <mxCell id="ph4" value="&lt;b&gt;Phase 4&lt;/b&gt;&lt;br&gt;API 확장&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;Pages · Variables&lt;br&gt;Annotations · 스크립트&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffcdd2;strokeColor=#b85450;arcSize=12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="880" y="100" width="180" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase 5 -->
+        <mxCell id="ph5" value="&lt;b&gt;Phase 5&lt;/b&gt;&lt;br&gt;DESIGN.md&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;표준화 · 통합&lt;br&gt;Skill 연동&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1bee7;strokeColor=#7b1fa2;arcSize=12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="100" width="160" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase 6 -->
+        <mxCell id="ph6" value="&lt;b&gt;Phase 6&lt;/b&gt;&lt;br&gt;검증&lt;br&gt;&lt;font style=&quot;font-size:9px;color:#666&quot;&gt;벤치마크 5개&lt;br&gt;MB 세션 복원 테스트&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff9c4;strokeColor=#f9a825;arcSize=12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="730" y="310" width="180" height="90" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrows -->
+        <mxCell id="arr12" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=3;strokeColor=#2e7d32;" edge="1" source="ph1" target="ph2" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr23" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=3;strokeColor=#1565c0;" edge="1" source="ph2" target="ph3" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr34" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=3;strokeColor=#b85450;" edge="1" source="ph3" target="ph4" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr45" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=3;strokeColor=#b85450;" edge="1" source="ph4" target="ph5" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase 6 arrows (converge) -->
+        <mxCell id="arr-p3-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#999;dashed=1;exitX=0.5;exitY=1;entryX=0;entryY=0.5;" edge="1" source="ph3" target="ph6" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arr-p4-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#999;dashed=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" source="ph4" target="ph6" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="970" y="270"/>
+              <mxPoint x="820" y="270"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arr-p5-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#999;dashed=1;exitX=0.5;exitY=1;entryX=1;entryY=0.5;" edge="1" source="ph5" target="ph6" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Phase 2 vertical connection to all -->
+        <mxCell id="mb-conn" value="MB 갱신" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=2;strokeColor=#1565c0;dashed=1;fontSize=9;fontColor=#1565c0;exitX=0.5;exitY=1;entryX=0.5;entryY=1;" edge="1" source="ph2" target="ph6" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="440" y="440"/>
+              <mxPoint x="820" y="440"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Sub-items for each phase -->
+        <!-- Phase 2 sub-items -->
+        <mxCell id="ph2-sub-bg" value="" style="rounded=1;fillColor=#e3f2fd;strokeColor=#90caf9;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="280" width="480" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="ph2-sub-title" value="Phase 2 세부 작업" style="text;html=1;fontSize=11;fontStyle=1;fontColor=#1565c0;align=left;" vertex="1" parent="1">
+          <mxGeometry x="90" y="285" width="200" height="18" as="geometry"/>
+        </mxCell>
+        <mxCell id="ph2-a" value="&lt;b&gt;2A&lt;/b&gt; memory-bank/ 6파일 초기화" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="310" width="200" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="ph2-b" value="&lt;b&gt;2B&lt;/b&gt; main.md에 MB 규칙 추가" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="355" width="200" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="ph2-c" value="&lt;b&gt;2C&lt;/b&gt; update-memory-bank WF&lt;br&gt;+ .clineignore" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#bbdefb;strokeColor=#1565c0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="100" y="400" width="200" height="35" as="geometry"/>
+        </mxCell>
+        <mxCell id="ph2-ab" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1;strokeColor=#1565c0;" edge="1" source="ph2-a" target="ph2-b" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="ph2-bc" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeWidth=1;strokeColor=#1565c0;" edge="1" source="ph2-b" target="ph2-c" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Effort estimate -->
+        <mxCell id="ph2-est" value="&lt;font style=&quot;font-size:9px&quot;&gt;예상 소요: 30분&lt;br&gt;코드 변경 없음&lt;br&gt;(마크다운만)&lt;/font&gt;" style="text;html=1;align=left;fillColor=none;strokeColor=none;fontColor=#666;" vertex="1" parent="1">
+          <mxGeometry x="330" y="310" width="120" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Info boxes -->
+        <mxCell id="info1" value="&lt;b&gt;변경 범위&lt;/b&gt;&lt;br&gt;&lt;br&gt;Phase 2: 마크다운만 (코드 변경 0)&lt;br&gt;Phase 3: ws.ts + code.ts + http-server + cli&lt;br&gt;Phase 4: code.ts + http-server + cli + scripts/&lt;br&gt;Phase 5: design-system.md → DESIGN.md&lt;br&gt;Phase 6: 테스트만 (파일 변경 0)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#ccc;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="480" width="300" height="130" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="info2" value="&lt;b&gt;MB 갱신 포인트&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;font color=&quot;#1565c0&quot;&gt;● Phase 2 완료 → 초기 상태 기록&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#b85450&quot;&gt;● Phase 3 완료 → techContext 갱신&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#b85450&quot;&gt;● Phase 4 완료 → systemPatterns 갱신&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#7b1fa2&quot;&gt;● Phase 5 완료 → productContext 갱신&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#f9a825&quot;&gt;● Phase 6 완료 → progress 최종 갱신&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#90caf9;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="625" width="300" height="140" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="info3" value="&lt;b&gt;의존관계&lt;/b&gt;&lt;br&gt;&lt;br&gt;━━ 순차 의존 (앞 Phase 완료 필요)&lt;br&gt;┅┅ 갱신 연결 (MB에 결과 기록)&lt;br&gt;┅┅ 수렴 (Phase 6이 전부 검증)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#ccc;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+          <mxGeometry x="80" y="780" width="300" height="90" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

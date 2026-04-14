@@ -61,6 +61,32 @@ Before starting any design task:
 2. Read the current selection or target frame to understand context
 3. Use design tokens (colors, spacing, typography) from the system
 
+## Memory Bank
+
+나는 세션이 리셋되면 이전 작업을 전부 잊는다. `memory-bank/` 폴더가 유일한 연결고리다.
+
+### 세션 시작 시
+모든 작업 시작 전 `memory-bank/` 파일을 읽고 현재 상태를 파악하라.
+읽는 순서: `projectbrief.md` → `activeContext.md` → `progress.md` → (필요 시 나머지)
+
+### 자동 갱신 시점
+다음 상황에서 **사용자 요청 없이도** 해당 파일을 갱신하라:
+- 기능 구현/버그 수정 완료 → `progress.md` + `activeContext.md`
+- Phase 단위 마일스톤 완료 → `progress.md` + `activeContext.md`
+- 아키텍처/패턴 변경 → `systemPatterns.md`
+- 기술 스택/의존성 변경 → `techContext.md`
+
+### 수동 갱신
+사용자가 **"update memory bank"**를 요청하면 `update-memory-bank` 워크플로우를 실행하라.
+6개 파일 전부를 검토하고 현재 상태에 맞게 갱신한다.
+
+### 갱신 규칙
+- 각 파일 **1~2페이지** 이내로 간결하게 유지
+- `activeContext.md`는 현재 초점만 남기고 과거 이력은 `progress.md`로 이동
+- 사실만 기록하라. 추측이나 계획 의견을 섞지 마라.
+
+---
+
 ## Workflow/Skill 유도
 
 사용자가 다음 작업을 요청하면 해당 Workflow를 안내하라:
@@ -68,6 +94,7 @@ Before starting any design task:
 - UX 리뷰/피드백 → `/ux-review.md`
 - 모바일 전환/적응 → `/mobile-adapt.md`
 - 색상/변수 등록 → `/register-colors.md`
+- Memory Bank 전체 갱신 → `/update-memory-bank.md`
 
 ---
 
