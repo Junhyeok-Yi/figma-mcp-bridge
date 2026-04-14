@@ -16,9 +16,10 @@
 - [x] 코드리뷰 12건 수정 — compact 기본값 통일, parseFlags boolean, readTimeout 제거, main.md 갱신 등
 - [x] Phase 5: DESIGN.md 표준화 — design-system.md → DESIGN.md 리네임, 전체 참조 통일
 
+- [x] Phase 6: 벤치마크 검증 — 프레임 5종×3모드 벤치마크 + MB 세션 복원 테스트 (32/32 pass)
+
 ## 진행 중
 
-- [ ] Phase 6: 벤치마크 검증 (프레임 5개 + MB 세션 복원 테스트)
 - [ ] feature/phase1-harness → main 머지
 
 ## 미완료
