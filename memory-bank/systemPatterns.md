@@ -1,35 +1,41 @@
 # System Patterns
 
-## 아키텍처
+## 디자인 구조
 
 ```
-Mode B (HTTP + CLI) — 현재 사용:
-  Cline → figma-cli.js → HTTP Server(:3000) → WebSocket(:8080) → Figma Plugin
-
-Mode A (MCP, 비활성):
-  Cursor → MCP stdio → Relay Server → WebSocket(:8080) → Figma Plugin
+Memo Board / Desktop (1440px, VERTICAL auto-layout)
+├── Header (HORIZONTAL) — 타이틀 "Memos" + 검색 버튼
+├── Tab Bar (HORIZONTAL) — 카테고리 탭 4개 + 정렬 버튼
+└── Card Grid (VERTICAL, gap 20)
+    ├── Row 1 (HORIZONTAL, fill, gap 20) — Card ×4
+    ├── Row 2 (HORIZONTAL, fill, gap 20) — Card ×4
+    └── Row 3 (HORIZONTAL, fill, gap 20) — Card ×4
 ```
 
-## 핵심 패턴
-
-- **WebSocket 공유**: ws.ts가 MCP/HTTP 양쪽에서 공통 사용
-- **Compact 3단계**: skeleton(구조만) / smart(기본, _defaults) / full(verbose+CSS)
-- **auto-truncation**: 500KB 초과 시 자식 20개만 전개 + _notice
-- **파일 기반 실행**: `run <file.js>`로 JSON 이스케이프 문제 회피
-- **배치 참조**: `$ref.nodeId`로 이전 작업 결과를 다음 작업에서 사용
-- **템플릿 API**: `tpl card --title "..."` 한 줄로 컴포넌트 생성
-- **전용 opcode**: Pages, Variables, Annotations에 CLI 래퍼 제공 (모델 실수 방지)
-
-## 하네스 3계층
+## 카드 구조
 
 ```
-⓪ Rules (.clinerules/)      — 시스템 프롬프트 자동 주입, 글로벌 제약
-① Memory Bank (memory-bank/) — AI의 첫 명시적 액션, 프로젝트 상태 파악
-② Workflows (.clinerules/workflows/) — / 명령 트리거, 멀티스텝 자동화
-③ Skills (.cline/skills/)    — 온디맨드 자동 감지, 전문 지식
+Card (VERTICAL, 320h, fill width, radius 20)
+├── Tag pill (radius 12, 반투명 배경)
+├── Date (12px, Medium)
+├── Spacer (grow)
+├── Title (18px, Semi Bold, fill width)
+└── Memo indicator (dot + label)
 ```
 
-- Rules = "헌법" — 항상 지키는 제약 (~3-5K tokens/req)
-- Memory Bank = "기억" — 세션 간 프로젝트 컨텍스트 유지
-- Workflows = "레시피" — 특정 작업의 단계별 절차
-- Skills = "전문서적" — 필요 시 자동 로드되는 심층 지식
+## 컬러 팔레트
+
+| 이름 | From | To |
+|------|------|------|
+| 노랑 | #FEF08A | #DECF62 |
+| 파랑 | #ADD8E6 | #87BBCD |
+| 보라 | #E8C3F6 | #C799DB |
+| 주황 | #FCBB9F | #E8967A |
+| 초록 | #B3EECA | #8BD1AA |
+| 골드 | #FED98E | #E8BE6B |
+
+## Auto-Layout 주의사항
+
+- `layoutSizingHorizontal = "FILL"`은 부모에 붙인 뒤 설정
+- GROUP/Mask 노드는 이동 불가 → 새로 만들어야 함
+- 폰트: "Semi Bold" (공백 있음), "Semibold" 아님

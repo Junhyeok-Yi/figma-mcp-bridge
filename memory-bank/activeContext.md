@@ -2,22 +2,24 @@
 
 ## 현재 작업 초점
 
-- Phase 1~6 전체 완료
-- feature/phase1-harness 브랜치에서 작업 중
-- main 머지 대기
+- 메모 앱 Desktop 화면 (1440px) 디자인 완료
+- auto-layout 적용, 카드 12개 그리드 구성
 
 ## 최근 변경
 
-- Phase 5: design-system.md → DESIGN.md 리네임, 전체 참조 통일
-- Phase 6: 벤치마크 스크립트 + MB 세션 복원 테스트 (32/32 pass)
+- "Desktop - 8" → "Memo Board / Desktop"으로 재구성
+- Header (타이틀 + 검색) + Tab Bar (4개 카테고리 + 정렬) + Card Grid (3×4)
+- 카드: 그라디언트 배경, 태그 pill, 날짜, 제목, Memo 인디케이터
+- 전체 VERTICAL auto-layout, 행마다 HORIZONTAL fill
 
 ## 다음 단계
 
-- feature/phase1-harness → main 머지
-- 실제 Figma 파일 대상 벤치마크 실행 (서버 연결 필요)
-- 실사용 피드백 반영
+- 모바일 버전 (390px) 디자인
+- 카드 상세 화면 디자인
+- 다크 모드 대응
 
 ## 활성 결정사항
 
-- Mode B(HTTP) 전용으로 고도화 진행
-- DESIGN.md가 디자인 토큰 SSOT
+- 카드 크기는 fill container (너비 자동 조절)
+- 6색 그라디언트 팔레트 로테이션
+- DESIGN.md 토큰 기반

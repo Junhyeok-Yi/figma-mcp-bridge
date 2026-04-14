@@ -128,6 +128,13 @@ Before starting any design task:
 4. component instance 내부는 필요한 경우에만 읽어라.
 5. 전체 텍스트 내용이 필요하면 `--depth`를 충분히 높여서 TEXT 노드의 `characters`까지 도달하라.
 
+## 디자인 수정 안전 규칙
+
+1. **기존 프레임을 직접 비우지 마라.** 새 프레임에 먼저 조립하고, 완성 후 교체하라.
+2. **GROUP/Mask 노드는 옮기지 마라.** 마스킹이 깨진다. 내용을 새로 만들어라.
+3. **`layoutSizingHorizontal = "FILL"`은 부모에 appendChild한 뒤에 설정하라.**
+4. 폰트 스타일 이름에 주의하라 (예: "Semi Bold" ≠ "Semibold"). `loadFontAsync`로 사전 검증.
+
 ## Error Handling
 
 - "Figma plugin not connected" → 사용자에게 Figma에서 플러그인 실행 요청

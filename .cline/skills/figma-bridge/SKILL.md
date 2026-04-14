@@ -93,6 +93,50 @@ node figma-cli.js tpl table --cols "이름,이메일" --rows "홍길동,hong@tes
 
 `$ref.property` — 이전 결과의 속성을 참조.
 
+## ⚠️ Figma API 함정 (반드시 숙지)
+
+### GROUP/Mask 노드는 절대 옮기지 마라
+Mask Group을 다른 프레임에 `appendChild`하면 마스킹 컨텍스트가 깨진다.
+기존 GROUP을 auto-layout으로 재구성하려면 **내용을 새로 만들어야 한다.**
+
+### layoutSizingHorizontal/Vertical = "FILL"은 부모에 붙인 뒤에만 호출
+```js
+// ❌ 틀림 — 부모에 붙이기 전
+child.layoutSizingHorizontal = "FILL";
+parent.appendChild(child);
+
+// ✅ 맞음 — 부모에 붙인 후
+parent.appendChild(child);
+child.layoutSizingHorizontal = "FILL";
+```
+
+### 파괴적 작업은 별도 프레임에서 먼저 조립
+기존 프레임의 children을 삭제하면 복구 불가. 반드시:
+1. 새 프레임을 **옆에** 생성하여 조립
+2. 결과 확인 후 기존 프레임 교체 or 삭제
+
+```js
+// ✅ 안전한 패턴
+const staging = figma.createFrame();
+staging.name = "Staging";
+// ... staging에 전부 조립 ...
+// 확인 후 기존 프레임 교체
+```
+
+### Auto-Layout 전환 시 주의
+- `layoutMode` 변경 시 기존 자식의 absolute 좌표가 무시됨
+- 전환 전 자식 순서와 크기를 미리 파악하고, 전환 후 재조정
+- `primaryAxisSizingMode = "AUTO"` + `resize(w, 작은값)` → 높이가 찌그러짐. HUG를 원하면 resize를 호출하지 마라
+
+### 폰트 스타일 이름 확인 필수
+Inter의 "Semibold"는 Figma에서 "Semi Bold" (공백 있음).
+반드시 `figma.loadFontAsync()`로 사전 검증:
+```js
+try {
+  await figma.loadFontAsync({family:"Inter", style:"Semi Bold"});
+} catch { /* fallback */ }
+```
+
 ## 타임아웃 대처
 
 | 상황 | 해결책 |
