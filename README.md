@@ -272,7 +272,7 @@ node figma-cli.js node 1:23 --depth 2
 
 ## Design System
 
-`design-system.md` 파일에 프로젝트 디자인 토큰이 정의되어 있습니다:
+`DESIGN.md` 파일에 프로젝트 디자인 토큰이 정의되어 있습니다:
 
 - **Colors**: Primitive + Semantic 색상 팔레트
 - **Typography**: Inter 기반 타입 스케일
@@ -282,7 +282,7 @@ node figma-cli.js node 1:23 --depth 2
 - **Component Patterns**: Card, Button, Input, List Item 구조
 
 AI가 디자인 작업 시 이 토큰을 자동으로 참조합니다.  
-프로젝트에 맞게 `design-system.md`를 수정하여 사용하세요.
+프로젝트에 맞게 `DESIGN.md`를 수정하여 사용하세요.
 
 ---
 
@@ -293,7 +293,7 @@ AI가 디자인 작업 시 이 토큰을 자동으로 참조합니다.
 
 1. **CLI 사용법**: 각 명령의 문법과 예시
 2. **워크플로우**: 파일 실행 > 플래그 명령 > eval 순서 권장
-3. **디자인 규칙**: design-system.md 참조 의무
+3. **디자인 규칙**: DESIGN.md 참조 의무
 4. **코드 패턴**: Auto Layout, 텍스트, 노드 조회 등 빈출 패턴
 5. **컨텍스트 관리**: depth 제한, 단계별 조회, 섹션별 작업 가이드
 
@@ -404,7 +404,7 @@ figma-mcp-bridge/
 │
 ├── figma-cli.js               # CLI 래퍼 (HTTP 모드용, 빌드 불필요)
 ├── .clinerules                # Cline 하네스 설정
-├── design-system.md           # 디자인 토큰 정의
+├── DESIGN.md                  # 디자인 토큰 정의 (SSOT)
 └── README.md
 ```
 

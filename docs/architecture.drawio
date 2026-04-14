@@ -518,7 +518,7 @@
         <mxCell id="pl-4d" value="    헬퍼 스크립트 4개 추가" style="text;html=1;fontSize=10;align=left;fontColor=#b85450;" vertex="1" parent="1">
           <mxGeometry x="975" y="299" width="350" height="16" as="geometry"/>
         </mxCell>
-        <mxCell id="pl-5" value="&lt;font color=&quot;#b85450&quot;&gt;&lt;b&gt;Phase 5&lt;/b&gt; — design-system.md → DESIGN.md 통합&lt;/font&gt;" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
+        <mxCell id="pl-5" value="&lt;font color=&quot;#b85450&quot;&gt;&lt;b&gt;Phase 5&lt;/b&gt; — DESIGN.md 표준화 완료&lt;/font&gt;" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
           <mxGeometry x="975" y="324" width="350" height="16" as="geometry"/>
         </mxCell>
         <mxCell id="pl-6" value="&lt;b&gt;Phase 6&lt;/b&gt; — 벤치마크 검증 (파일 변경 없음, 테스트만)" style="text;html=1;fontSize=10;align=left;" vertex="1" parent="1">
@@ -650,7 +650,7 @@
         </mxCell>
 
         <!-- Info boxes -->
-        <mxCell id="info1" value="&lt;b&gt;변경 범위&lt;/b&gt;&lt;br&gt;&lt;br&gt;Phase 2: 마크다운만 (코드 변경 0)&lt;br&gt;Phase 3: ws.ts + code.ts + http-server + cli&lt;br&gt;Phase 4: code.ts + http-server + cli + scripts/&lt;br&gt;Phase 5: design-system.md → DESIGN.md&lt;br&gt;Phase 6: 테스트만 (파일 변경 0)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#ccc;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+        <mxCell id="info1" value="&lt;b&gt;변경 범위&lt;/b&gt;&lt;br&gt;&lt;br&gt;Phase 2: 마크다운만 (코드 변경 0)&lt;br&gt;Phase 3: ws.ts + code.ts + http-server + cli&lt;br&gt;Phase 4: code.ts + http-server + cli + scripts/&lt;br&gt;Phase 5: DESIGN.md 통합 완료&lt;br&gt;Phase 6: 테스트만 (파일 변경 0)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fafafa;strokeColor=#ccc;fontSize=10;align=left;spacingLeft=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
           <mxGeometry x="80" y="480" width="300" height="130" as="geometry"/>
         </mxCell>
 

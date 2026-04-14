@@ -1,4 +1,4 @@
-// Color Palette — design-system.md 기반 색상 스와치 생성
+// Color Palette — DESIGN.md 기반 색상 스와치 생성
 // Usage: node figma-cli.js run scripts/color-palette.js
 
 await figma.loadFontAsync({family: "Inter", style: "Medium"});
