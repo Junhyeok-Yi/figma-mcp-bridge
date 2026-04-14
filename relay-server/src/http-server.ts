@@ -37,16 +37,12 @@ function readOpts(query: Record<string, any>) {
   return { compact, skeleton, depth, timeout };
 }
 
-function readTimeout(query: Record<string, any>): number | undefined {
-  return query.timeout ? parseInt(query.timeout as string, 10) : undefined;
-}
-
 app.get("/api/selection", (req, res) => {
   const opts = readOpts(req.query);
   handle(res, "GET_SELECTION", opts, opts.timeout);
 });
-app.get("/api/styles", (req, res) => handle(res, "GET_STYLES", undefined, readTimeout(req.query)));
-app.get("/api/components", (req, res) => handle(res, "GET_COMPONENTS", undefined, readTimeout(req.query)));
+app.get("/api/styles", (req, res) => handle(res, "GET_STYLES", undefined, readOpts(req.query).timeout));
+app.get("/api/components", (req, res) => handle(res, "GET_COMPONENTS", undefined, readOpts(req.query).timeout));
 app.get("/api/node/:id", (req, res) => {
   const opts = readOpts(req.query);
   handle(res, "GET_NODE_BY_ID", { nodeId: req.params.id, ...opts }, opts.timeout);
@@ -68,19 +64,19 @@ app.get("/api/node/:id/children", (req, res) => {
 });
 
 // ===== Pages =====
-app.get("/api/pages", (req, res) => handle(res, "GET_PAGES", undefined, readTimeout(req.query)));
+app.get("/api/pages", (req, res) => handle(res, "GET_PAGES", undefined, readOpts(req.query).timeout));
 app.post("/api/pages/switch", (req, res) => handle(res, "SET_CURRENT_PAGE", req.body));
 app.post("/api/pages/create", (req, res) => handle(res, "CREATE_PAGE", req.body));
 app.post("/api/pages/delete", (req, res) => handle(res, "DELETE_PAGE", req.body));
 
 // ===== Variables =====
-app.get("/api/vars", (req, res) => handle(res, "GET_VARIABLES", undefined, readTimeout(req.query)));
-app.get("/api/vars/collections", (req, res) => handle(res, "GET_VARIABLE_COLLECTIONS", undefined, readTimeout(req.query)));
+app.get("/api/vars", (req, res) => handle(res, "GET_VARIABLES", undefined, readOpts(req.query).timeout));
+app.get("/api/vars/collections", (req, res) => handle(res, "GET_VARIABLE_COLLECTIONS", undefined, readOpts(req.query).timeout));
 app.post("/api/vars/create", (req, res) => handle(res, "CREATE_VARIABLE", req.body));
 app.post("/api/vars/bind", (req, res) => handle(res, "BIND_VARIABLE", req.body));
 
 // ===== Annotations =====
-app.get("/api/annotations/:id", (req, res) => handle(res, "GET_ANNOTATIONS", { nodeId: req.params.id }, readTimeout(req.query)));
+app.get("/api/annotations/:id", (req, res) => handle(res, "GET_ANNOTATIONS", { nodeId: req.params.id }, readOpts(req.query).timeout));
 app.post("/api/annotations", (req, res) => handle(res, "SET_ANNOTATIONS", req.body));
 
 // ===== Write =====

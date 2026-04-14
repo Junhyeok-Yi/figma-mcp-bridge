@@ -66,9 +66,13 @@ function parseFlags(args) {
   for (let i = 0; i < args.length; i++) {
     if (!args[i].startsWith("--")) continue;
     const key = args[i].slice(2);
-    const val = args[i + 1];
-    flags[key] = val;
-    i++;
+    const next = args[i + 1];
+    if (next === undefined || next.startsWith("--")) {
+      flags[key] = true;
+    } else {
+      flags[key] = next;
+      i++;
+    }
   }
   return flags;
 }
@@ -246,10 +250,11 @@ const commands = {
   async pages(args) {
     const sub = args[0];
     if (!sub || sub === "list") return api("GET", appendTimeout("/api/pages"));
+    const isFigmaId = (s) => /^\d+:\d+$/.test(s);
     if (sub === "switch") {
       const target = args[1];
       if (!target) throw new Error("Usage: figma-cli pages switch <name|id>");
-      const payload = target.includes(":") ? { id: target } : { name: target };
+      const payload = isFigmaId(target) ? { id: target } : { name: target };
       return api("POST", "/api/pages/switch", payload);
     }
     if (sub === "create") {
@@ -259,7 +264,7 @@ const commands = {
     if (sub === "delete") {
       const target = args[1];
       if (!target) throw new Error("Usage: figma-cli pages delete <name|id>");
-      const payload = target.includes(":") ? { id: target } : { name: target };
+      const payload = isFigmaId(target) ? { id: target } : { name: target };
       return api("POST", "/api/pages/delete", payload);
     }
     throw new Error("Usage: figma-cli pages [list|switch|create|delete]");
@@ -277,13 +282,18 @@ const commands = {
         collectionId: flags.collection || undefined,
         resolvedType: (flags.type || "COLOR").toUpperCase(),
       };
-      if (flags.value) {
-        if (flags.value.startsWith("#")) {
-          payload.value = hexToRgb(flags.value);
-        } else if (!isNaN(Number(flags.value))) {
-          payload.value = Number(flags.value);
+      if (flags.value !== undefined) {
+        const v = String(flags.value);
+        if (v.startsWith("#")) {
+          payload.value = hexToRgb(v);
+        } else if (v === "true") {
+          payload.value = true;
+        } else if (v === "false") {
+          payload.value = false;
+        } else if (!isNaN(Number(v))) {
+          payload.value = Number(v);
         } else {
-          payload.value = flags.value;
+          payload.value = v;
         }
       }
       return api("POST", "/api/vars/create", payload);
@@ -370,6 +380,10 @@ COMMANDS
     list   --items "a,b,c" --w --parent
     navbar --title --items "Home,About" --w
     table  --cols "Name,Email" --rows "John,john@..." --w
+    create-instance --componentId <id> [--parentId <id>]
+    set-reactions --sourceId <id> --destId <id> [--trigger --transition --duration]
+    boolean-ops --ids "id1,id2" [--op UNION|SUBTRACT|INTERSECT|EXCLUDE]
+    create-style --name "Brand/Primary" [--color "#3B82F6"]
 
 GLOBAL FLAGS
   --timeout <ms>                        Override request timeout (default: 30000)

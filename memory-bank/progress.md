@@ -23,7 +23,7 @@
 
 ## 알려진 이슈
 
-- 대형 프레임(자식 50+) 읽기 시 타임아웃 가능 (REQUEST_TIMEOUT_MS=10s)
-- compact 모드에서 정보 손실 → 할루시네이션 유발 가능
-- component instance 내부가 과도하게 전개됨
+- 대형 프레임(자식 50+): auto-truncation(500KB, 20개)으로 대응, 그 이상은 `children --offset` 필요
+- component instance 내부가 과도하게 전개됨 → `--depth` 제한 권장
 - design-system.md와 DESIGN.md 네이밍 불일치 (Phase 5에서 통합 예정)
+- Annotations API: Figma Plugin API 신규 네임스페이스, 버전 호환성 검증 필요

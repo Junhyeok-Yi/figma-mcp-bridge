@@ -218,8 +218,6 @@ function skeletonify(data: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
-const COMPACTIFY_DEFAULTS_OMITTED: string[] = ["visible", "opacity", "blendMode", "rotation"];
-
 function compactify(data: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { id: data.id, name: data.name, type: data.type };
 
@@ -340,7 +338,7 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
   // READ: Selection
   // ===================================================================
   if (type === "GET_SELECTION") {
-    const compact = msg.payload?.compact ?? false;
+    const compact = msg.payload?.compact !== false;
     const skeleton = msg.payload?.skeleton ?? false;
     const depth = msg.payload?.depth as number | undefined;
     const selection = figma.currentPage.selection;
@@ -630,13 +628,17 @@ figma.ui.onmessage = async (msg: { type: string; messageId?: string; payload?: a
   // PAGES: List / Switch / Create / Delete
   // ===================================================================
   else if (type === "GET_PAGES") {
-    const pages = figma.root.children.map(p => ({
-      id: p.id,
-      name: p.name,
-      childCount: p.children.length,
-      isCurrent: p === figma.currentPage,
-    }));
-    reply("PAGES_RESULT", { error: null, pages });
+    try {
+      const pages = figma.root.children.map(p => ({
+        id: p.id,
+        name: p.name,
+        childCount: p.children.length,
+        isCurrent: p === figma.currentPage,
+      }));
+      reply("PAGES_RESULT", { error: null, pages });
+    } catch (err) {
+      replyError("PAGES_RESULT", String(err));
+    }
   }
 
   else if (type === "SET_CURRENT_PAGE") {

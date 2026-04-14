@@ -1,9 +1,8 @@
 // Boolean Operations (Union / Subtract / Intersect / Exclude)
-// Usage: node figma-cli.js run scripts/boolean-ops.js
-// Edit NODE_IDS and OPERATION before running.
+// Usage: node figma-cli.js tpl boolean-ops --ids "1:23,4:56" [--op UNION]
 
-const NODE_IDS = ["REPLACE_ID_1", "REPLACE_ID_2"];
-const OPERATION = "UNION";
+const NODE_IDS = "{{ids}}".split(",").map(s => s.trim());
+const OPERATION = "{{op|UNION}}";
 
 const nodes = [];
 for (const id of NODE_IDS) {

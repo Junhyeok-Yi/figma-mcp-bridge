@@ -21,7 +21,7 @@ figma-plugin/
   manifest.json      — Plugin 매니페스트
 figma-cli.js         — CLI 래퍼 (project root)
 templates/           — UI 템플릿 6개 (card, button, input, list, navbar, table)
-scripts/             — 예제 스크립트 (login-page, dashboard, color-palette)
+scripts/             — 예제 스크립트 + 헬퍼 (login-page, dashboard, color-palette, create-instance, set-reactions, boolean-ops, create-style)
 memory-bank/         — 세션 간 컨텍스트 유지 (6개 핵심 파일)
 .clinerules/         — Rules 3개 + Workflows 5개
 .cline/skills/       — Skills 5개

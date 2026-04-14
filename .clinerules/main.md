@@ -15,14 +15,14 @@ Set `FIGMA_API=http://localhost:3000` if the server runs on a different port.
 | Command | Description |
 |---------|-------------|
 | `status` | Check if Figma plugin is connected |
-| `selection` | Get currently selected layers |
-| `selection --skeleton` | Structure only (id/name/type/childCount) |
+| `selection [--skeleton\|--verbose] [--depth N]` | Get currently selected layers |
 | `styles` | Get local paint/text/effect styles |
 | `components` | Get local components list |
-| `node <id>` | Get node details by ID |
-| `node <id> --depth N` | Limit tree traversal depth |
-| `node <id> --verbose` | Full data including CSS |
-| `node <id> --skeleton` | Structure only |
+| `node <id> [--skeleton\|--verbose] [--depth N]` | Get node details by ID |
+| `children <id> [--offset 0 --limit 20 --depth 1]` | Get children with pagination |
+| `pages [list\|switch\|create\|delete]` | Manage pages |
+| `vars [list\|collections\|create\|bind]` | Manage variables |
+| `annotations <id>` | Read annotations from node |
 
 ### Write (POST)
 | Command | Description |
@@ -31,6 +31,9 @@ Set `FIGMA_API=http://localhost:3000` if the server runs on a different port.
 | `modify <id> [flags]` | Modify an existing node |
 | `delete <id> [<id>...]` | Delete one or more nodes |
 | `export <id> [--format png/svg]` | Export node as image |
+| `annotate <id> --label "text"` | Add annotation to node |
+| `vars create --name <n> [--type COLOR --value ...]` | Create variable |
+| `vars bind --node <id> --field fills --var <varId>` | Bind variable to node |
 
 ### Universal
 | Command | Description |
@@ -39,6 +42,11 @@ Set `FIGMA_API=http://localhost:3000` if the server runs on a different port.
 | `eval <code>` | Execute a short inline expression |
 | `batch <file.json>` | Execute multiple operations from a JSON file |
 | `tpl <name> [flags]` | Generate UI from a template |
+
+### Global Flags
+| Flag | Description |
+|------|-------------|
+| `--timeout <ms>` | Override request timeout (default: 30000) |
 
 ## Preferred Workflow
 

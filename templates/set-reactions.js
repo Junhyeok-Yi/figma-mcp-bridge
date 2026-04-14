@@ -1,12 +1,11 @@
 // Set Prototype Reactions (Navigate to destination)
-// Usage: node figma-cli.js run scripts/set-reactions.js
-// Edit SOURCE_ID and DEST_ID before running.
+// Usage: node figma-cli.js tpl set-reactions --sourceId 1:23 --destId 4:56 [--trigger ON_CLICK --transition SMART_ANIMATE --duration 300]
 
-const SOURCE_ID = "REPLACE_ME";
-const DEST_ID = "REPLACE_ME";
-const TRIGGER = "ON_CLICK";
-const TRANSITION = "SMART_ANIMATE";
-const DURATION = 300;
+const SOURCE_ID = "{{sourceId}}";
+const DEST_ID = "{{destId}}";
+const TRIGGER = "{{trigger|ON_CLICK}}";
+const TRANSITION = "{{transition|SMART_ANIMATE}}";
+const DURATION = {{duration|300}};
 
 const source = await figma.getNodeByIdAsync(SOURCE_ID);
 if (!source) return { error: `Source not found: ${SOURCE_ID}` };
