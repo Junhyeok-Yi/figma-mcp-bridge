@@ -5,6 +5,8 @@ export const WS_PORT = parseInt(process.env.WS_PORT || "8080", 10);
 export const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || "30000", 10);
 export const CODE_TIMEOUT_MS = parseInt(process.env.CODE_TIMEOUT_MS || "60000", 10);
 
+const PING_INTERVAL_MS = 15_000;
+
 let figmaClient: WebSocket | null = null;
 const pendingRequests = new Map<
   string,
@@ -27,8 +29,26 @@ export function startWebSocketServer(): WebSocketServer {
   });
 
   wss.on("connection", (ws) => {
-    log("Figma plugin connected");
+    if (figmaClient && figmaClient !== ws && figmaClient.readyState !== WebSocket.CLOSED) {
+      log("Terminating previous zombie connection");
+      figmaClient.terminate();
+    }
     figmaClient = ws;
+    log("Figma plugin connected");
+
+    let isAlive = true;
+    ws.on("pong", () => { isAlive = true; });
+
+    const pingTimer = setInterval(() => {
+      if (!isAlive) {
+        log("Pong timeout — terminating dead connection");
+        clearInterval(pingTimer);
+        ws.terminate();
+        return;
+      }
+      isAlive = false;
+      ws.ping();
+    }, PING_INTERVAL_MS);
 
     ws.on("message", (raw) => {
       let msg: { messageId?: string; type?: string; payload?: unknown };
@@ -36,6 +56,11 @@ export function startWebSocketServer(): WebSocketServer {
         msg = JSON.parse(raw.toString());
       } catch {
         log(`Invalid JSON from Figma: ${raw.toString().slice(0, 200)}`);
+        return;
+      }
+
+      if (msg.type === "HEARTBEAT") {
+        ws.send(JSON.stringify({ type: "HEARTBEAT_ACK" }));
         return;
       }
 
@@ -55,11 +80,13 @@ export function startWebSocketServer(): WebSocketServer {
     });
 
     ws.on("close", () => {
+      clearInterval(pingTimer);
       log("Figma plugin disconnected");
       if (figmaClient === ws) figmaClient = null;
     });
 
     ws.on("error", (err) => {
+      clearInterval(pingTimer);
       log(`WebSocket error: ${err.message}`);
     });
   });
