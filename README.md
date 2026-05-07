@@ -134,12 +134,11 @@ Cline MCP 설정 파일 (`cline_mcp_settings.json`):
 
 ```bash
 # 1) 의존성 설치 + 빌드 (최초 1회)
-./modeb.sh setup
+./modeb.sh up
 
-# 2) 서버 시작 (터미널 1)
-./modeb.sh start
+# 2) Figma Desktop에서 MCP Bridge 플러그인 실행
 
-# 3) 연결 상태 확인 (터미널 2)
+# 3) 연결 상태 확인
 ./modeb.sh status
 ```
 
