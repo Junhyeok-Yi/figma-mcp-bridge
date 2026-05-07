@@ -130,6 +130,25 @@ Cline MCP 설정 파일 (`cline_mcp_settings.json`):
 
 회사 등에서 MCP가 차단된 경우, HTTP API + CLI 래퍼로 동일한 기능을 사용합니다.
 
+### 초간단 실행 (권장)
+
+```bash
+# 1) 의존성 설치 + 빌드 (최초 1회)
+./modeb.sh up
+
+# 2) Figma Desktop에서 MCP Bridge 플러그인 실행
+
+# 3) 연결 상태 확인
+./modeb.sh status
+```
+
+추가 점검이 필요하면:
+
+```bash
+./modeb.sh doctor
+```
+
+
 ### 서버 시작
 
 ```bash
