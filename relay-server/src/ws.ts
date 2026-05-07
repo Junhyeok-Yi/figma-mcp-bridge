@@ -5,7 +5,8 @@ export const WS_PORT = parseInt(process.env.WS_PORT || "8080", 10);
 export const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || "30000", 10);
 export const CODE_TIMEOUT_MS = parseInt(process.env.CODE_TIMEOUT_MS || "60000", 10);
 
-const PING_INTERVAL_MS = 15_000;
+const ENABLE_WS_PING = process.env.ENABLE_WS_PING === "1";
+const PING_INTERVAL_MS = parseInt(process.env.PING_INTERVAL_MS || "15000", 10);
 
 let figmaClient: WebSocket | null = null;
 const pendingRequests = new Map<
@@ -36,19 +37,23 @@ export function startWebSocketServer(): WebSocketServer {
     figmaClient = ws;
     log("Figma plugin connected");
 
-    let isAlive = true;
-    ws.on("pong", () => { isAlive = true; });
+    let pingTimer: ReturnType<typeof setInterval> | null = null;
 
-    const pingTimer = setInterval(() => {
-      if (!isAlive) {
-        log("Pong timeout — terminating dead connection");
-        clearInterval(pingTimer);
-        ws.terminate();
-        return;
-      }
-      isAlive = false;
-      ws.ping();
-    }, PING_INTERVAL_MS);
+    if (ENABLE_WS_PING) {
+      let isAlive = true;
+      ws.on("pong", () => { isAlive = true; });
+
+      pingTimer = setInterval(() => {
+        if (!isAlive) {
+          log("Pong timeout — terminating dead connection");
+          if (pingTimer) clearInterval(pingTimer);
+          ws.terminate();
+          return;
+        }
+        isAlive = false;
+        ws.ping();
+      }, PING_INTERVAL_MS);
+    }
 
     ws.on("message", (raw) => {
       let msg: { messageId?: string; type?: string; payload?: unknown };
@@ -80,13 +85,13 @@ export function startWebSocketServer(): WebSocketServer {
     });
 
     ws.on("close", () => {
-      clearInterval(pingTimer);
+      if (pingTimer) clearInterval(pingTimer);
       log("Figma plugin disconnected");
       if (figmaClient === ws) figmaClient = null;
     });
 
     ws.on("error", (err) => {
-      clearInterval(pingTimer);
+      if (pingTimer) clearInterval(pingTimer);
       log(`WebSocket error: ${err.message}`);
     });
   });

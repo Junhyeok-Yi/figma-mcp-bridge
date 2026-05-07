@@ -116,11 +116,7 @@
 
   let ws = null;
   let reconnectTimer = null;
-  let heartbeatTimer = null;
-  let heartbeatAckPending = false;
   let manualDisconnect = false;
-
-  const HEARTBEAT_INTERVAL = 20000;
   const RECONNECT_BASE = 3000;
   const RECONNECT_MAX = 30000;
   let reconnectDelay = RECONNECT_BASE;
@@ -157,39 +153,6 @@
   }
 
   // -----------------------------------------------------------------------
-  // Heartbeat
-  // -----------------------------------------------------------------------
-  function startHeartbeat() {
-    stopHeartbeat();
-    heartbeatAckPending = false;
-    heartbeatTimer = setInterval(() => {
-      if (!ws || ws.readyState !== WebSocket.OPEN) {
-        stopHeartbeat();
-        return;
-      }
-      if (heartbeatAckPending) {
-        appendLog("Heartbeat ACK 미응답 — 재연결");
-        stopHeartbeat();
-        ws.close();
-        return;
-      }
-      heartbeatAckPending = true;
-      try {
-        ws.send(JSON.stringify({ type: "HEARTBEAT" }));
-      } catch {
-        appendLog("Heartbeat 전송 실패 — 재연결");
-        stopHeartbeat();
-        ws.close();
-      }
-    }, HEARTBEAT_INTERVAL);
-  }
-
-  function stopHeartbeat() {
-    if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
-    heartbeatAckPending = false;
-  }
-
-  // -----------------------------------------------------------------------
   // WebSocket lifecycle
   // -----------------------------------------------------------------------
   function connect() {
@@ -207,11 +170,9 @@
       appendLog("서버 연결 성공");
       reconnectDelay = RECONNECT_BASE;
       clearReconnect();
-      startHeartbeat();
     };
 
     ws.onclose = () => {
-      stopHeartbeat();
       setStatus("disconnected");
       appendLog("서버 연결 끊김");
       ws = null;
@@ -225,10 +186,6 @@
     ws.onmessage = (event) => {
       let msg;
       try { msg = JSON.parse(event.data); } catch { return; }
-      if (msg.type === "HEARTBEAT_ACK") {
-        heartbeatAckPending = false;
-        return;
-      }
       appendLog("← " + msg.type);
       parent.postMessage({ pluginMessage: msg }, "*");
     };
@@ -237,7 +194,6 @@
   function disconnect() {
     manualDisconnect = true;
     clearReconnect();
-    stopHeartbeat();
     if (ws) {
       ws.close();
       ws = null;
