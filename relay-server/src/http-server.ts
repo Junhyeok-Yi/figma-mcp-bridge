@@ -4,8 +4,22 @@ import { startWebSocketServer, sendToFigma, isConnected, log, CODE_TIMEOUT_MS } 
 startWebSocketServer();
 
 const HTTP_PORT = parseInt(process.env.HTTP_PORT || "3000", 10);
+const MAX_RUN_TIMEOUT_MS = parseInt(process.env.MAX_RUN_TIMEOUT_MS || `${5 * 60_000}`, 10);
+const MIN_RUN_TIMEOUT_MS = 1_000;
+
 const app = express();
 app.use(express.json({ limit: "10mb" }));
+
+function clampRunTimeout(requested: unknown, fallback: number): number {
+  const n =
+    typeof requested === "number" && Number.isFinite(requested)
+      ? requested
+      : typeof requested === "string" && requested
+        ? parseInt(requested, 10)
+        : NaN;
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(Math.max(n, MIN_RUN_TIMEOUT_MS), MAX_RUN_TIMEOUT_MS);
+}
 
 async function handle(
   res: express.Response,
@@ -87,7 +101,10 @@ app.post("/api/export_node", (req, res) => handle(res, "EXPORT_NODE", req.body))
 
 // ===== Universal =====
 app.post("/api/run_code", (req, res) => {
-  handle(res, "RUN_CODE", req.body, CODE_TIMEOUT_MS);
+  const body = (req.body ?? {}) as { code?: unknown; timeout?: unknown };
+  const requested = body.timeout ?? (req.query.timeout as string | undefined);
+  const timeout = clampRunTimeout(requested, CODE_TIMEOUT_MS);
+  handle(res, "RUN_CODE", { code: body.code }, timeout);
 });
 
 // ===== Batch (with $ref variable substitution) =====
@@ -131,7 +148,12 @@ app.post("/api/batch", async (req, res) => {
   for (const op of operations) {
     try {
       const payload = resolveRefs(op.payload, refs);
-      const timeout = op.type === "RUN_CODE" ? CODE_TIMEOUT_MS : undefined;
+      const timeout =
+        op.type === "RUN_CODE"
+          ? clampRunTimeout(op.timeout, CODE_TIMEOUT_MS)
+          : op.timeout
+            ? clampRunTimeout(op.timeout, CODE_TIMEOUT_MS)
+            : undefined;
       const result = await sendToFigma(op.type, payload, timeout);
       if (op.ref) refs.set(op.ref, result);
       results.push({ ok: true, ref: op.ref || null, data: result });
