@@ -10,6 +10,10 @@ dist/
 # Keep CLI wrapper at project root
 !figma-cli.js
 
+# Release artifacts (make-release.sh 출력물, git에는 포함 안 함)
+figma-mcp-bridge-v*.zip
+release-dist/
+
 # OS
 .DS_Store
 Thumbs.db

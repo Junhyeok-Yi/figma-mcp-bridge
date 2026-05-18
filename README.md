@@ -20,8 +20,48 @@ Mode B: HTTP + CLI (MCP 차단 환경)
 
 ---
 
+## 빠른 시작 (Quick Start)
+
+> 사전 요구사항: **Node.js v18 이상**, **Figma Desktop 앱**
+
+### 방법 1 — 릴리즈 zip 받기 (권장)
+
+1. [GitHub Releases](../../releases) 에서 최신 `figma-mcp-bridge-vX.X.X.zip` 다운로드
+2. 압축 해제
+3. `start.command` **더블클릭** (터미널이 열리고 서버가 자동 시작됩니다)
+4. **Figma Desktop** → `Plugins` → `Development` → **Import plugin from manifest…**
+5. 방금 압축 해제한 폴더의 **`figma-plugin/manifest.json`** 선택
+6. `Plugins` → `Development` → **MCP Bridge** 실행
+7. 플러그인 UI에 🟢 **연결됨** 표시 확인 → 완료!
+
+### 방법 2 — 직접 클론해서 실행
+
+```bash
+git clone https://github.com/Junhyeok-Yi/figma-mcp-bridge.git
+cd figma-mcp-bridge
+./start.command   # 의존성 설치 + 빌드 + 서버 시작 한 번에
+```
+
+이후 피그마 플러그인 등록 과정은 방법 1의 4~7번 단계와 동일합니다.
+
+### 릴리즈 zip 직접 만들기 (새 버전 배포 시)
+
+```bash
+./make-release.sh 1.2.0
+# → figma-mcp-bridge-v1.2.0.zip 생성
+```
+
+또는 `v1.2.0` 태그를 push하면 GitHub Actions가 자동으로 릴리즈를 만듭니다:
+
+```bash
+git tag v1.2.0 && git push origin v1.2.0
+```
+
+---
+
 ## 목차
 
+- [빠른 시작](#빠른-시작-quick-start)
 - [사전 요구사항](#사전-요구사항)
 - [설치 가이드](#설치-가이드)
 - [Mode A: MCP 모드](#mode-a-mcp-모드-cursor--cline)
@@ -458,7 +498,7 @@ figma-mcp-bridge/
 ├── relay-server/              # Node.js Relay Server
 │   ├── src/
 │   │   ├── ws.ts              # WebSocket 공유 모듈 (MCP/HTTP 공통)
-│   │   ├── index.ts           # MCP 모드 엔트리포인트
+│   │   ├── index.ts           # MCP 모드 엔트리포인트 (동결)
 │   │   └── http-server.ts     # HTTP 모드 엔트리포인트 (Express)
 │   ├── dist/                  # 빌드 결과물
 │   ├── tsconfig.json
@@ -471,23 +511,38 @@ figma-mcp-bridge/
 │   ├── ui.html                # Plugin UI (WebSocket 클라이언트)
 │   └── package.json
 │
+├── templates/                 # 고수준 UI 템플릿 (card-premium, bento-grid, cta-premium 등)
+├── scripts/                   # 예제·헬퍼 스크립트 (color-palette, apply-soft-dark 등)
+├── docs/                      # 아키텍처 다이어그램 (.drawio)
+├── memory-bank/               # AI 세션 간 컨텍스트 유지 파일 (6개)
+│
 ├── figma-cli.js               # CLI 래퍼 (HTTP 모드용, 빌드 불필요)
-├── .clinerules                # Cline 하네스 설정
+├── start.command              # macOS 더블클릭 시작 스크립트
+├── make-release.sh            # 빌드 + zip 패키징 스크립트
+├── .clinerules/               # Cline 하네스 설정 (Rules / Workflows / Skills)
 ├── DESIGN.md                  # 디자인 토큰 정의 (SSOT)
 └── README.md
 ```
 
+> **Memory Bank:** AI(Cline/Cursor)가 디자인 작업 히스토리를 세션 간 유지하기 위한 노트 폴더입니다.
+> 새 디자인 프로젝트를 시작할 때는 Cline에 **"reset memory bank"** 라고 입력하세요.
+
 ### Scripts
 
 ```bash
-# MCP 모드 (Cursor / Cline with MCP)
-cd relay-server && npm run start:mcp
+# 서버 시작 (가장 쉬운 방법)
+./start.command          # 의존성 확인 + 빌드 + HTTP 서버 실행
 
-# HTTP 모드 (Cline without MCP)
-cd relay-server && npm run start:http
+# 직접 실행
+cd relay-server && npm run start:http   # HTTP 모드 (Mode B, 권장)
+cd relay-server && npm run start:mcp    # MCP 모드 (Mode A)
 
-# Figma 플러그인 빌드
+# 빌드
+cd relay-server && npm run build
 cd figma-plugin && npm run build
+
+# 릴리즈 zip 만들기
+./make-release.sh 1.0.0
 ```
 
 ---
