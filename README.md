@@ -80,6 +80,10 @@ cd ..
 
 ## Mode A: MCP 모드 (Cursor / Cline)
 
+> **참고 — Mode A는 Phase 0~3 표면(읽기/쓰기/내보내기/`run_figma_code`)에서 동결되어 있습니다.**
+> Pages, Variables, Annotations, children 페이지네이션 등 Phase 4 이후 기능은 **Mode B(HTTP+CLI)** 에만 노출됩니다.
+> 사내 환경이 MCP를 차단하지 않는다면 Mode A로 기본 작업이 가능하지만, 신규 기능을 쓰려면 Mode B로 전환하세요.
+
 MCP가 사용 가능한 환경에서 사용합니다.
 
 ### Cursor 설정
@@ -401,7 +405,27 @@ node figma-cli.js run script.js
 |---|---|
 | 플러그인 미연결 | `node figma-cli.js status`로 확인 |
 | Figma 백그라운드 | Figma를 포그라운드로 전환 |
-| 복잡한 코드 | `CODE_TIMEOUT_MS` 환경변수 증가 |
+| 복잡한 코드 | 요청별 `--timeout 120000` 또는 `CODE_TIMEOUT_MS` 환경변수 증가 |
+
+**요청별 타임아웃 (run/eval/tpl):** CLI의 글로벌 플래그 `--timeout <ms>`가 `/api/run_code` body에도 실립니다. 서버는 `MAX_RUN_TIMEOUT_MS`(기본 5분)로 상한을 둡니다.
+
+```bash
+# 무거운 작업만 120초까지 허용
+node figma-cli.js --timeout 120000 run heavy-recolor.js
+```
+
+### 연결이 자꾸 끊겨요 (회사 방화벽 등)
+
+서버↔플러그인 사이 keep-alive를 끄거나 늦출 수 있습니다.
+
+| 증상 | 시도 |
+|---|---|
+| WebView ping 호환 문제로 끊김 | 서버 ping 비활성화: `RELAY_WS_PING_MS=0 npm run start:http` |
+| 짧은 idle 후 끊김 | 일반 워크플로에서는 그대로 두고, 플러그인 UI의 “연결” 버튼으로 수동 복구 |
+
+### 플러그인 패널을 두 개 열었어요
+
+릴레이는 **단일 클라이언트**만 받습니다. 두 번째 패널은 1008 코드로 거부되고, 그 패널은 자동 재연결을 멈춥니다. 다른 창을 닫고 두 번째 패널의 “연결” 버튼을 다시 누르세요.
 
 ### 폰트 에러
 
@@ -419,8 +443,10 @@ await figma.loadFontAsync({family: 'Inter', style: 'Regular'});
 |---|---|---|
 | `WS_PORT` | `8080` | WebSocket 포트 |
 | `HTTP_PORT` | `3000` | HTTP API 포트 (HTTP 모드만) |
-| `REQUEST_TIMEOUT_MS` | `10000` | 일반 요청 타임아웃 (ms) |
-| `CODE_TIMEOUT_MS` | `30000` | 코드 실행 타임아웃 (ms) |
+| `REQUEST_TIMEOUT_MS` | `30000` | 일반 요청 타임아웃 (ms) |
+| `CODE_TIMEOUT_MS` | `60000` | `RUN_CODE` 기본 타임아웃 (ms) |
+| `MAX_RUN_TIMEOUT_MS` | `300000` | `/api/run_code` 요청별 타임아웃 상한 (5분) |
+| `RELAY_WS_PING_MS` | `15000` | WebSocket ping 주기 (ms). `0`이면 비활성화 |
 | `FIGMA_API` | `http://localhost:3000` | CLI가 연결할 HTTP 서버 주소 |
 
 ---

@@ -1,3 +1,9 @@
+// ============================================================================
+// Mode A (MCP) — 동결(frozen) 표면입니다.
+// 신규 기능(Pages / Variables / Annotations / children 페이지네이션 등)은
+// HTTP+CLI 모드에만 추가합니다. 여기 도구 9개는 기존 호환을 위해 유지됩니다.
+// 정책 변경이 필요하면 README의 "Mode A" 섹션을 먼저 갱신하세요.
+// ============================================================================
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";

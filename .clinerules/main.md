@@ -103,6 +103,7 @@ Before starting any design task:
 - 모바일 전환/적응 → `/mobile-adapt.md`
 - 색상/변수 등록 → `/register-colors.md`
 - Memory Bank 전체 갱신 → `/update-memory-bank.md`
+- 새 디자인 프로젝트 시작 / Memory Bank 리셋 → `/reset-memory-bank.md`
 
 ---
 
