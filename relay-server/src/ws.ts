@@ -5,7 +5,8 @@ export const WS_PORT = parseInt(process.env.WS_PORT || "8080", 10);
 export const REQUEST_TIMEOUT_MS = parseInt(process.env.REQUEST_TIMEOUT_MS || "30000", 10);
 export const CODE_TIMEOUT_MS = parseInt(process.env.CODE_TIMEOUT_MS || "60000", 10);
 
-const PING_INTERVAL_MS = 15_000;
+/** 0 = 비활성화. 임베디드(WebView) 클라이언트와 ping/pong 호환 문제 시 끄고 테스트. */
+const PING_INTERVAL_MS = parseInt(process.env.RELAY_WS_PING_MS ?? "15000", 10);
 
 let figmaClient: WebSocket | null = null;
 const pendingRequests = new Map<
@@ -28,27 +29,65 @@ export function startWebSocketServer(): WebSocketServer {
     log(`WebSocket server listening on ws://localhost:${WS_PORT}`);
   });
 
-  wss.on("connection", (ws) => {
+  wss.on("connection", (ws, req) => {
+    const peer = req.socket.remoteAddress ?? "?";
+    const existingOpen =
+      figmaClient &&
+      (figmaClient.readyState === WebSocket.OPEN ||
+        figmaClient.readyState === WebSocket.CONNECTING);
+
+    if (existingOpen) {
+      log(
+        `Rejecting extra Figma connection (${peer}) — relay already has an active client. Close other plugin windows or disconnect there.`
+      );
+      try {
+        ws.close(1008, "relay already has a connected client");
+      } catch {
+        ws.terminate();
+      }
+      return;
+    }
+
     if (figmaClient && figmaClient !== ws && figmaClient.readyState !== WebSocket.CLOSED) {
-      log("Terminating previous zombie connection");
-      figmaClient.terminate();
+      log(`Replacing stale socket (${peer})`);
+      try {
+        figmaClient.close(1000, "replaced by new connection");
+      } catch {
+        figmaClient.terminate();
+      }
     }
     figmaClient = ws;
-    log("Figma plugin connected");
+    log(`Figma plugin connected (${peer})`);
 
     let isAlive = true;
-    ws.on("pong", () => { isAlive = true; });
+    let pongMissStreak = 0;
+    ws.on("pong", () => {
+      isAlive = true;
+      pongMissStreak = 0;
+    });
 
-    const pingTimer = setInterval(() => {
-      if (!isAlive) {
-        log("Pong timeout — terminating dead connection");
-        clearInterval(pingTimer);
-        ws.terminate();
-        return;
-      }
-      isAlive = false;
-      ws.ping();
-    }, PING_INTERVAL_MS);
+    let pingTimer: ReturnType<typeof setInterval> | null = null;
+    if (PING_INTERVAL_MS > 0) {
+      pingTimer = setInterval(() => {
+        if (!isAlive) {
+          pongMissStreak++;
+          if (pongMissStreak >= 2) {
+            log("Pong timeout (2 intervals) — closing connection");
+            if (pingTimer) clearInterval(pingTimer);
+            ws.terminate();
+            return;
+          }
+        } else {
+          pongMissStreak = 0;
+        }
+        isAlive = false;
+        try {
+          ws.ping();
+        } catch {
+          if (pingTimer) clearInterval(pingTimer);
+        }
+      }, PING_INTERVAL_MS);
+    }
 
     ws.on("message", (raw) => {
       let msg: { messageId?: string; type?: string; payload?: unknown };
@@ -80,13 +119,13 @@ export function startWebSocketServer(): WebSocketServer {
     });
 
     ws.on("close", () => {
-      clearInterval(pingTimer);
+      if (pingTimer) clearInterval(pingTimer);
       log("Figma plugin disconnected");
       if (figmaClient === ws) figmaClient = null;
     });
 
     ws.on("error", (err) => {
-      clearInterval(pingTimer);
+      if (pingTimer) clearInterval(pingTimer);
       log(`WebSocket error: ${err.message}`);
     });
   });
