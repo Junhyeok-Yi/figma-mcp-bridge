@@ -14,10 +14,11 @@ const totalW = parseInt("{{w|1200}}") || 1200;
 const gap = 16;
 const itemTitles = "{{items|Feature 1,Feature 2,Feature 3,Feature 4,Feature 5}}".split(",").map(s => s.trim());
 
-const bg = isDark ? {r: 0.039, g: 0.039, b: 0.043} : {r: 0.969, g: 0.973, b: 0.976};
-const cardBg = isDark ? {r: 0.078, g: 0.078, b: 0.086} : {r: 1, g: 1, b: 1};
-const titleColor = isDark ? {r: 1, g: 1, b: 1} : {r: 0.067, g: 0.094, b: 0.153};
-const descColor = isDark ? {r: 0.63, g: 0.63, b: 0.65} : {r: 0.38, g: 0.408, b: 0.459};
+// 다크: 순백/진검 대비 완화(배경 살짝 올림, 텍스트·링은 살짝 낮춤)
+const bg = isDark ? {r: 0.09, g: 0.091, b: 0.098} : {r: 0.969, g: 0.973, b: 0.976};
+const cardBg = isDark ? {r: 0.13, g: 0.132, b: 0.145} : {r: 1, g: 1, b: 1};
+const titleColor = isDark ? {r: 0.93, g: 0.94, b: 0.96} : {r: 0.067, g: 0.094, b: 0.153};
+const descColor = isDark ? {r: 0.58, g: 0.6, b: 0.64} : {r: 0.38, g: 0.408, b: 0.459};
 const ringColor = isDark ? {r: 1, g: 1, b: 1} : {r: 0, g: 0, b: 0};
 const accentColor = {r: 0.231, g: 0.51, b: 0.965};
 
@@ -131,7 +132,7 @@ while (itemIdx < itemTitles.length) {
     card.itemSpacing = 8;
     card.cornerRadius = 20;
     card.fills = [{type: "SOLID", color: cardBg}];
-    card.strokes = [{type: "SOLID", color: ringColor, opacity: 0.06}];
+    card.strokes = [{type: "SOLID", color: ringColor, opacity: isDark ? 0.04 : 0.06}];
     card.strokeWeight = 1;
 
     const cardTitle = figma.createText();

@@ -12,16 +12,16 @@ const outerBg = isDark
   ? {r: 1, g: 1, b: 1}
   : {r: 0, g: 0, b: 0};
 const innerBg = isDark
-  ? {r: 0.078, g: 0.078, b: 0.086}
+  ? {r: 0.13, g: 0.132, b: 0.145}
   : {r: 1, g: 1, b: 1};
 const ringColor = isDark
   ? {r: 1, g: 1, b: 1}
   : {r: 0, g: 0, b: 0};
 const titleColor = isDark
-  ? {r: 1, g: 1, b: 1}
+  ? {r: 0.93, g: 0.94, b: 0.96}
   : {r: 0.067, g: 0.094, b: 0.153};
 const descColor = isDark
-  ? {r: 0.63, g: 0.63, b: 0.65}
+  ? {r: 0.58, g: 0.6, b: 0.64}
   : {r: 0.38, g: 0.408, b: 0.459};
 const tagBg = isDark
   ? {r: 1, g: 1, b: 1}
@@ -37,8 +37,8 @@ shell.counterAxisSizingMode = "FIXED";
 shell.paddingLeft = shell.paddingRight = 6;
 shell.paddingTop = shell.paddingBottom = 6;
 shell.cornerRadius = 24;
-shell.fills = [{type: "SOLID", color: outerBg, opacity: 0.05}];
-shell.strokes = [{type: "SOLID", color: ringColor, opacity: 0.1}];
+shell.fills = [{type: "SOLID", color: outerBg, opacity: isDark ? 0.045 : 0.05}];
+shell.strokes = [{type: "SOLID", color: ringColor, opacity: isDark ? 0.065 : 0.1}];
 shell.strokeWeight = 1;
 shell.x = {{x|0}};
 shell.y = {{y|0}};
@@ -55,7 +55,7 @@ core.itemSpacing = 14;
 core.cornerRadius = 20;
 core.fills = [{type: "SOLID", color: innerBg}];
 core.effects = [
-  {type: "INNER_SHADOW", color: {r:1, g:1, b:1, a: isDark ? 0.08 : 0.15}, offset: {x:0, y:1}, radius: 1, spread: 0, visible: true, blendMode: "NORMAL"},
+  {type: "INNER_SHADOW", color: {r:1, g:1, b:1, a: isDark ? 0.045 : 0.15}, offset: {x:0, y:1}, radius: 1, spread: 0, visible: true, blendMode: "NORMAL"},
 ];
 shell.appendChild(core);
 core.layoutSizingHorizontal = "FILL";
@@ -81,7 +81,7 @@ if (tagText) {
   tagLabel.lineHeight = {unit: "PIXELS", value: 16};
   tagLabel.characters = tagText.toUpperCase();
   tagLabel.letterSpacing = {unit: "PERCENT", value: 15};
-  tagLabel.fills = [{type: "SOLID", color: isDark ? {r:1,g:1,b:1} : tagBg, opacity: isDark ? 0.7 : 1}];
+  tagLabel.fills = [{type: "SOLID", color: isDark ? {r:0.88,g:0.9,b:0.93} : tagBg, opacity: isDark ? 0.72 : 1}];
   tag.appendChild(tagLabel);
   core.appendChild(tag);
 }
