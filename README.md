@@ -74,6 +74,7 @@ git tag v1.2.0 && git push origin v1.2.0
 - [제공되는 MCP Tools](#제공되는-mcp-tools)
 - [트러블슈팅](#트러블슈팅)
 - [환경 변수](#환경-변수)
+- [Mode B I/O 구조도](#mode-b-io-구조도)
 - [프로젝트 구조](#프로젝트-구조)
 
 ---
@@ -550,3 +551,12 @@ cd figma-plugin && npm run build
 ## 라이선스
 
 ISC
+
+
+## Mode B I/O 구조도
+
+Mode B 요청/응답 흐름은 `docs/mode-b-io.md`를 참고하세요.
+
+- Guard: 메모리 신선도 검사(쓰기 명령)
+- Transport: CLI → HTTP(:3000) → WS(:8080) → Figma Plugin
+- Observability: `workflow-usage.jsonl` 로그

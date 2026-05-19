@@ -32,8 +32,17 @@ async function handle(
     res.json(result);
   } catch (err: any) {
     const status = err.message.includes("not connected") ? 502 : 500;
-    res.status(status).json({ error: err.message });
+    const hint = err.message.includes("timeout")
+      ? "Try --skeleton first, then children pagination (e.g. children <id> --offset 0 --limit 20 --depth 1), or increase --timeout."
+      : undefined;
+    res.status(status).json({ error: err.message, hint });
   }
+}
+
+function readTimeoutByDepth(query: Record<string, any>, base: number): number {
+  const depth = query.depth ? parseInt(query.depth as string, 10) : 0;
+  if (Number.isFinite(depth) && depth >= 2) return Math.max(base, 90_000);
+  return base;
 }
 
 // ===== Status =====
@@ -53,13 +62,13 @@ function readOpts(query: Record<string, any>) {
 
 app.get("/api/selection", (req, res) => {
   const opts = readOpts(req.query);
-  handle(res, "GET_SELECTION", opts, opts.timeout);
+  handle(res, "GET_SELECTION", opts, opts.timeout ?? readTimeoutByDepth(req.query, 30_000));
 });
 app.get("/api/styles", (req, res) => handle(res, "GET_STYLES", undefined, readOpts(req.query).timeout));
 app.get("/api/components", (req, res) => handle(res, "GET_COMPONENTS", undefined, readOpts(req.query).timeout));
 app.get("/api/node/:id", (req, res) => {
   const opts = readOpts(req.query);
-  handle(res, "GET_NODE_BY_ID", { nodeId: req.params.id, ...opts }, opts.timeout);
+  handle(res, "GET_NODE_BY_ID", { nodeId: req.params.id, ...opts }, opts.timeout ?? readTimeoutByDepth(req.query, 30_000));
 });
 
 // ===== Read: Children pagination =====

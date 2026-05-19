@@ -1,5 +1,48 @@
 # Design System Tokens
 
+## 2026-05 Editorial B/W + Pastel Block Theme (Plugin UI)
+
+### Theme Intent
+- Monochrome foundation (pure black/white) with oversized pastel section blocks.
+- All CTA shapes must use pill radius (`50px`) or full circle (`9999px`).
+- Use figmaSans variable scale for hierarchy and figmaMono only for taxonomy labels/captions.
+
+### Core Tokens (Plugin UI)
+
+#### Colors
+- `primary` `#000000`
+- `canvas` `#FFFFFF`
+- `surface-soft` `#F7F7F5`
+- `hairline` `#E6E6E6`
+- `block-lime` `#DCEEB1`
+- `block-lilac` `#C5B0F4`
+- `block-cream` `#F4ECD6`
+- `block-pink` `#EFD4D4`
+- `block-mint` `#C8E6CD`
+- `block-coral` `#F3C9B6`
+- `block-navy` `#1F1D3D`
+- `accent-magenta` `#FF3D8B`
+
+#### Spacing
+- `xs=8`, `sm=12`, `md=16`, `lg=24`, `xl=32`, `xxl=48`, `section=96`
+
+#### Radius
+- `md=8`, `lg=24`, `pill=50`, `full=9999`
+
+### Plugin Layout Pattern
+1. `top-nav` (56px, white, body-sm)
+2. `marquee-strip` (36px, black, inverse text)
+3. White hero block with dual pill CTA
+4. Color-block storytelling sections (one block color per viewport)
+5. White template grid and white footer
+
+### Plugin Component Rules
+- Primary button: black fill + white text + pill.
+- Secondary button: white fill + black text + pill.
+- Promo button: magenta fill + white text, only once per page.
+- Inputs/cards: white fill + 1px hairline border; avoid heavy shadows.
+- Color-block sections: no drop shadow; depth is created by color only.
+
 이 문서는 Figma 디자인 작업 시 사용할 표준 디자인 토큰을 정의합니다.
 Cline/AI 에이전트는 이 토큰을 참조하여 일관된 디자인을 생성해야 합니다.
 
