@@ -10,10 +10,7 @@ DESIGN.md에 정의된 브랜드 디자인 시스템을 Figma 작업에 적용�
 
 ## DESIGN.md 참조 방법
 
-모든 디자인 작업 전 DESIGN.md를 반드시 읽는다:
-```bash
-node figma-cli.js eval "return 'ready'" && cat DESIGN.md
-```
+모든 디자인 작업 전 `DESIGN.md`를 Read 도구로 반드시 읽는다 (프로젝트 루트).
 
 ## HEX → RGB 변환
 

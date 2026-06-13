@@ -1,3 +1,8 @@
+---
+name: update-memory-bank
+description: "memory-bank/ 6개 파일을 현재 프로젝트 상태에 맞게 전체 갱신한다. 사용자가 'update memory bank' 또는 메모리 뱅크 갱신을 요청할 때 사용."
+---
+
 # Update Memory Bank Workflow
 
 Memory Bank 6개 파일을 현재 프로젝트 상태에 맞게 전체 갱신하는 워크플로우.

@@ -1,17 +1,17 @@
+---
+name: mobile-adapt
+description: "선택된 데스크탑 Figma 프레임을 375px 기준 모바일 버전으로 재설계해 같은 페이지에 생성한다. 모바일 전환/반응형 적응 요청 시 사용."
+---
+
 # Mobile Adaptation Workflow
 
 선택된 데스크탑 프레임을 375px 기준 모바일 버전으로 재설계하여 같은 페이지에 생성하는 워크플로우.
 
 ## Step 1: 연결 확인
-```bash
-node figma-cli.js status
-```
+`run_figma_code`에 `return figma.currentPage.name` → 연결 확인.
 
 ## Step 2: 원본 프레임 분석
-```bash
-node figma-cli.js selection --depth 2
-```
-데스크탑 프레임의 구조, 레이아웃, 콘텐츠를 파악한다:
+`get_figma_selection`으로 데스크탑 프레임의 구조, 레이아웃, 콘텐츠를 파악한다:
 - 전체 너비와 레이아웃 방향
 - 주요 섹션 구분 (header, content, sidebar, footer 등)
 - 멀티컬럼 레이아웃 여부
@@ -29,18 +29,10 @@ node figma-cli.js selection --depth 2
 - **패딩 축소**: 데스크탑의 60~70% 수준
 
 ## Step 4: DESIGN.md 확인
-```bash
-cat DESIGN.md
-```
-DESIGN.md에 모바일 breakpoint, 모바일 전용 토큰이 있으면 참고한다.
+`DESIGN.md`를 Read하여 모바일 breakpoint, 모바일 전용 토큰이 있으면 참고한다.
 
 ## Step 5: 모바일 프레임 생성
-원본 프레임 옆에 모바일 버전을 생성한다.
-
-`.js` 파일을 작성하여 실행:
-```bash
-node figma-cli.js run mobile-adapt-output.js
-```
+원본 프레임 옆에 모바일 버전을 `run_figma_code`로 생성한다 (코드가 길면 여러 호출로 분할).
 
 핵심 원칙:
 - 너비: **375px** (iPhone SE 기준)
@@ -50,11 +42,10 @@ node figma-cli.js run mobile-adapt-output.js
 - 섹션 간격: **16~24px**
 - auto-layout 사용 필수
 
+> 참고: `templates/`의 컴포넌트 코드를 읽어 `run_figma_code`에 재사용할 수 있다.
+
 ## Step 6: 검증
-생성된 모바일 프레임을 읽어서 확인:
-```bash
-node figma-cli.js node <mobile_frame_id> --depth 1
-```
+생성된 모바일 프레임을 `get_node_by_id`로 읽거나 `export_node`(PNG)로 시각 확인:
 
 확인 사항:
 - 375px 너비에 맞게 배치되었는가

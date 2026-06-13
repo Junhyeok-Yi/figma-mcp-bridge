@@ -1,24 +1,22 @@
+---
+name: ux-review
+description: "선택된 Figma 프레임을 Nielsen 10 휴리스틱으로 UX 평가하고 annotation으로 피드백을 단다. UX 리뷰/사용성 검토/피드백 요청 시 사용."
+---
+
 # UX Review Workflow
 
-선택된 Figma 프레임에 대해 UX 관점의 피드백을 생성하고 annotation으로 달아주는 워크플로우.
+선택된 Figma 프레임에 대해 UX 관점의 피드백을 생성하고 annotation으로 달아주는 워크플로우. 평가 기준은 `ux-principles` 스킬을 참조한다.
 
 ## Step 1: 연결 확인
-```bash
-node figma-cli.js status
-```
-연결되어 있지 않으면 사용자에게 Figma 플러그인 실행을 요청하고 중단.
+`run_figma_code`에 `return figma.currentPage.name` → 연결 확인. 연결되어 있지 않으면 사용자에게 Figma 플러그인 실행을 요청하고 중단.
 
 ## Step 2: 프레임 구조 파악
-```bash
-node figma-cli.js selection --skeleton
-```
-선택된 프레임의 전체 구조(노드 타입, 자식 수)를 파악한다.
-프레임이 선택되지 않았으면 사용자에게 프레임 선택을 요청하고 중단.
+`get_figma_selection`으로 선택된 프레임의 전체 구조(노드 타입, 자식 수)를 파악한다. 프레임이 선택되지 않았으면 사용자에게 프레임 선택을 요청하고 중단.
 
 ## Step 3: 섹션별 상세 읽기
-구조에서 파악된 주요 섹션(Header, Content, Footer 등)을 각각 `--depth 2`로 읽는다:
-```bash
-node figma-cli.js node <section_id> --depth 2
+구조에서 파악된 주요 섹션(Header, Content, Footer 등)을 각각 `get_node_by_id`로 읽는다:
+```
+mcp__figma-bridge__get_node_by_id { nodeId: "<section_id>" }
 ```
 각 섹션의 레이아웃, 색상, 타이포그래피, 간격을 정확히 파악한다.
 TEXT 노드의 `characters`는 반드시 원문 그대로 기록한다.
@@ -53,9 +51,11 @@ TEXT 노드의 `characters`는 반드시 원문 그대로 기록한다.
 - **Minor**: 개선하면 좋은 사항
 
 ## Step 6: Annotation 달기
-각 피드백을 해당 노드에 annotation으로 추가한다:
-```bash
-node figma-cli.js eval 'const n = await figma.getNodeByIdAsync("NODE_ID"); n.annotations = [...(n.annotations||[]), {label: "UX: [심각도] 피드백 내용"}]; return "done";'
+각 피드백을 해당 노드에 `run_figma_code`로 annotation을 추가한다:
+```js
+const n = await figma.getNodeByIdAsync("NODE_ID");
+n.annotations = [...(n.annotations || []), { label: "UX: [심각도] 피드백 내용" }];
+return "done";
 ```
 
 ## Step 7: 요약 보고

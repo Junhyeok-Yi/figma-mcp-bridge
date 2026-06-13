@@ -1,3 +1,8 @@
+---
+name: reset-memory-bank
+description: "새 디자인 프로젝트로 넘어갈 때 memory-bank/를 깨끗하게 비운다. 브릿지 도구 구조는 유지하고 직전 작업 컨텍스트만 리셋. '새 디자인 프로젝트 시작' 또는 'reset memory bank' 요청 시 사용."
+---
+
 # Reset Memory Bank Workflow
 
 다음 디자인 프로젝트로 넘어갈 때 Memory Bank를 깨끗하게 비우는 워크플로우.
@@ -82,5 +87,5 @@
 ## 안 하는 일
 
 - `DESIGN.md` 는 건드리지 않는다(디자인 토큰의 SSoT이므로 디자인 시스템이 정말 바뀐 경우에만 수동 수정)
-- `.clinerules`, `.cline/skills/` 는 건드리지 않는다(브리지 도구의 동작 규칙)
+- `CLAUDE.md`, `.claude/skills/` 는 건드리지 않는다(브릿지 도구의 동작 규칙)
 - 코드/스크립트/템플릿은 건드리지 않는다
