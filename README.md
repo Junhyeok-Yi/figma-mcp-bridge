@@ -1,35 +1,77 @@
 # Figma ↔ AI Bridge (MCP + HTTP)
 
 로컬 WebSocket 기반의 Figma–AI 브릿지 서버입니다.  
-**MCP 모드**(Cursor, Cline 등)와 **HTTP 모드**(MCP 차단 환경)를 모두 지원하며,  
-AI Extension이 Figma 디자인 데이터를 **읽고 쓸 수** 있게 합니다.
+**MCP 모드**(Claude Code)와 **HTTP 모드**(MCP 차단 환경)를 모두 지원하며,  
+AI 에이전트가 Figma 디자인 데이터를 **읽고 쓸 수** 있게 합니다.
 
 ```
-Mode A: MCP
+Mode A: MCP (권장)
 ┌──────────────┐    stdio     ┌───────────────┐   WebSocket    ┌──────────────┐
-│  Cursor /    │ ◀──────────▶ │  Relay Server │ ◀────────────▶ │  Figma       │
-│  Cline (AI)  │   MCP 프로토콜 │  (Node.js)    │   ws://8080    │  (Plugin)    │
+│  Claude Code │ ◀──────────▶ │  Relay Server │ ◀────────────▶ │  Figma       │
+│  (AI)        │   MCP 프로토콜 │  (Node.js)    │   ws://8080    │  (Plugin)    │
 └──────────────┘              └───────────────┘                └──────────────┘
 
-Mode B: HTTP + CLI (MCP 차단 환경)
+Mode B: HTTP + CLI (MCP 차단 환경 / 자동화 스크립트)
 ┌──────────────┐   shell cmd  ┌───────────────┐   HTTP     ┌───────────────┐   WebSocket   ┌──────────────┐
-│  Cline (AI)  │ ──────────▶ │  figma-cli.js │ ────────▶ │  HTTP Server  │ ◀───────────▶ │  Figma       │
+│  AI / Shell  │ ──────────▶ │  figma-cli.js │ ────────▶ │  HTTP Server  │ ◀───────────▶ │  Figma       │
 │              │   stdout     │  (CLI 래퍼)    │  :3000     │  (Express)    │   ws://8080   │  (Plugin)    │
 └──────────────┘              └───────────────┘            └───────────────┘               └──────────────┘
+```
+
+> **Claude Code 전용 하네스 포함**: 프로젝트 루트의 `CLAUDE.md`(상시 규칙)와 `.claude/skills/`(도메인 스킬·워크플로우)가 Claude Code에 맞춰 구성되어 있습니다. 자세한 설정은 [Mode A: MCP 모드](#mode-a-mcp-모드-claude-code) 참고.
+
+---
+
+## 빠른 시작 (Quick Start)
+
+> 사전 요구사항: **Node.js v18 이상**, **Figma Desktop 앱**
+
+### 방법 1 — 릴리즈 zip 받기 (권장)
+
+1. [GitHub Releases](../../releases) 에서 최신 `figma-mcp-bridge-vX.X.X.zip` 다운로드
+2. 압축 해제
+3. `start.command` **더블클릭** (터미널이 열리고 서버가 자동 시작됩니다)
+4. **Figma Desktop** → `Plugins` → `Development` → **Import plugin from manifest…**
+5. 방금 압축 해제한 폴더의 **`figma-plugin/manifest.json`** 선택
+6. `Plugins` → `Development` → **MCP Bridge** 실행
+7. 플러그인 UI에 🟢 **연결됨** 표시 확인 → 완료!
+
+### 방법 2 — 직접 클론해서 실행
+
+```bash
+git clone https://github.com/Junhyeok-Yi/figma-mcp-bridge.git
+cd figma-mcp-bridge
+./start.command   # 의존성 설치 + 빌드 + 서버 시작 한 번에
+```
+
+이후 피그마 플러그인 등록 과정은 방법 1의 4~7번 단계와 동일합니다.
+
+### 릴리즈 zip 직접 만들기 (새 버전 배포 시)
+
+```bash
+./make-release.sh 1.2.0
+# → figma-mcp-bridge-v1.2.0.zip 생성
+```
+
+또는 `v1.2.0` 태그를 push하면 GitHub Actions가 자동으로 릴리즈를 만듭니다:
+
+```bash
+git tag v1.2.0 && git push origin v1.2.0
 ```
 
 ---
 
 ## 목차
 
+- [빠른 시작](#빠른-시작-quick-start)
 - [사전 요구사항](#사전-요구사항)
 - [설치 가이드](#설치-가이드)
-- [Mode A: MCP 모드](#mode-a-mcp-모드-cursor--cline)
+- [Mode A: MCP 모드 (Claude Code)](#mode-a-mcp-모드-claude-code)
 - [Mode B: HTTP + CLI 모드](#mode-b-http--cli-모드-mcp-차단-환경)
 - [CLI 사용법](#cli-사용법)
 - [Compact 응답 모드](#compact-응답-모드)
 - [Design System](#design-system)
-- [Cline 하네스 설정](#cline-하네스-설정-clinerules)
+- [Claude Code 하네스](#claude-code-하네스-claudemd--skills)
 - [제공되는 MCP Tools](#제공되는-mcp-tools)
 - [트러블슈팅](#트러블슈팅)
 - [환경 변수](#환경-변수)
@@ -44,7 +86,7 @@ Mode B: HTTP + CLI (MCP 차단 환경)
 | **Node.js** | v18 이상 | `node --version` |
 | **npm** | v9 이상 | `npm --version` |
 | **Figma Desktop** | 최신 | Figma 앱 실행 필요 (웹 버전은 WebSocket 제한) |
-| **VS Code** | 최신 | Cline 또는 Cursor |
+| **Claude Code** | 최신 | MCP 모드 사용 (`.mcp.json` 자동 등록) |
 
 ---
 
@@ -77,51 +119,49 @@ cd ..
 
 ---
 
-## Mode A: MCP 모드 (Cursor / Cline)
+## Mode A: MCP 모드 (Claude Code)
 
-MCP가 사용 가능한 환경에서 사용합니다.
+> **참고 — Mode A는 Phase 0~3 표면(읽기/쓰기/내보내기/`run_figma_code`)으로 구성됩니다.**
+> Pages, Variables, Annotations 등은 전용 툴 대신 **`run_figma_code`** 로 모두 처리합니다(임의 Plugin API 실행).
 
-### Cursor 설정
+이 저장소는 **Claude Code 전용 하네스**를 포함합니다. 프로젝트를 Claude Code로 열면 자동으로:
+- `.mcp.json` — `figma-bridge` MCP 서버를 등록 (아래 9개 툴 노출)
+- `CLAUDE.md` — 상시 규칙(연결 전제, `run_figma_code` 사용법, Figma API 함정, memory-bank)
+- `.claude/skills/` — 도메인 스킬 + 워크플로우(`/a11y-audit`, `/ux-review`, `/mobile-adapt` 등)
 
-`~/.cursor/mcp.json` 또는 프로젝트의 `.cursor/mcp.json`:
+### 설정
 
-```json
-{
-  "mcpServers": {
-    "figma-bridge": {
-      "command": "node",
-      "args": ["/절대경로/figma-mcp-bridge/relay-server/dist/index.js"],
-      "env": { "WS_PORT": "8080" }
-    }
-  }
-}
-```
-
-### Cline 설정
-
-Cline MCP 설정 파일 (`cline_mcp_settings.json`):
+프로젝트 루트에 이미 `.mcp.json`이 있습니다 (절대경로만 환경에 맞게 확인):
 
 ```json
 {
   "mcpServers": {
     "figma-bridge": {
       "command": "node",
-      "args": ["/절대경로/figma-mcp-bridge/relay-server/dist/index.js"],
+      "args": ["/Users/<you>/figma-mcp-bridge/relay-server/dist/index.js"],
       "env": { "WS_PORT": "8080" }
     }
   }
 }
 ```
+
+1. `cd relay-server && npm run build` — `dist/index.js` 빌드 확인
+2. Figma Desktop → Plugins → Development → **MCP Bridge** 실행 (🟢 연결됨)
+3. WS 8080은 한 relay만 소유 가능 — HTTP 모드 서버가 떠 있으면 끄기 (`lsof -i :8080`)
+4. Claude Code 세션 시작 → `figma-bridge` 서버 승인 (프로젝트 MCP는 최초 1회 승인)
 
 ### 사용법
 
-자연어로 AI에게 요청하면 됩니다:
+자연어로 요청하면 Claude Code가 `mcp__figma-bridge__*` 툴을 호출합니다:
 
 ```
 "Figma에서 현재 선택된 레이어 정보 가져와"
-"320x200 파란색 카드 프레임 만들어줘"
-"Auto Layout 카드 컴포넌트 만들어줘"
+"320x200 카드 프레임 만들어줘"
+"이 프레임 모바일로 전환해줘"   → /mobile-adapt 스킬
+"접근성 감사해줘"               → /a11y-audit 스킬
 ```
+
+> 연결 확인: `run_figma_code`에 `return figma.currentPage.name` → 페이지명 반환되면 정상.
 
 ---
 
@@ -146,10 +186,9 @@ node figma-cli.js status
 # → {"connected": true}
 ```
 
-### Cline에서 사용
+### CLI로 사용
 
-Cline이 `figma-cli.js`를 통해 Figma를 제어합니다.  
-프로젝트 루트에 `.clinerules` 파일이 포함되어 있어, Cline이 자동으로 CLI 사용법을 인식합니다.
+`figma-cli.js`로 Figma를 제어합니다. 자동화 스크립트나 MCP를 쓸 수 없는 환경의 폴백 경로입니다. Claude Code는 기본적으로 Mode A(MCP)를 사용합니다.
 
 ---
 
@@ -272,7 +311,7 @@ node figma-cli.js node 1:23 --depth 2
 
 ## Design System
 
-`design-system.md` 파일에 프로젝트 디자인 토큰이 정의되어 있습니다:
+`DESIGN.md` 파일에 프로젝트 디자인 토큰이 정의되어 있습니다:
 
 - **Colors**: Primitive + Semantic 색상 팔레트
 - **Typography**: Inter 기반 타입 스케일
@@ -282,26 +321,31 @@ node figma-cli.js node 1:23 --depth 2
 - **Component Patterns**: Card, Button, Input, List Item 구조
 
 AI가 디자인 작업 시 이 토큰을 자동으로 참조합니다.  
-프로젝트에 맞게 `design-system.md`를 수정하여 사용하세요.
+프로젝트에 맞게 `DESIGN.md`를 수정하여 사용하세요.
 
 ---
 
-## Cline 하네스 설정 (.clinerules)
+## Claude Code 하네스 (CLAUDE.md + Skills)
 
-`.clinerules` 파일이 프로젝트 루트에 포함되어 있습니다.  
-이 파일은 Cline에게 다음을 안내합니다:
+이 저장소는 Claude Code에 맞춘 하네스를 포함합니다. 강한 모델 전제로 **간결하게** 구성하되, 핵심 안전장치(Figma API 함정, memory-bank 연속성)는 유지합니다.
 
-1. **CLI 사용법**: 각 명령의 문법과 예시
-2. **워크플로우**: 파일 실행 > 플래그 명령 > eval 순서 권장
-3. **디자인 규칙**: design-system.md 참조 의무
-4. **코드 패턴**: Auto Layout, 텍스트, 노드 조회 등 빈출 패턴
-5. **컨텍스트 관리**: depth 제한, 단계별 조회, 섹션별 작업 가이드
+- **`CLAUDE.md`** (프로젝트 루트) — 세션마다 자동 로드되는 상시 규칙:
+  - 연결 전제(플러그인 실행, WS 8080 단일 소유), `run_figma_code` 주력 사용법
+  - DESIGN.md = SSOT, memory-bank 읽기/자동 갱신
+  - Figma Plugin API 함정(resize 순서, FILL은 appendChild 후, 폰트 로드, GROUP/Mask 금지, staging 후 교체)
+- **`.claude/skills/`** — 도메인 스킬 + 슬래시 워크플로우:
+  - 도메인: `figma-bridge`, `design-system`, `design-quality`, `a11y-guide`, `ux-principles`, `figma-variables`
+  - 워크플로우: `/a11y-audit`, `/ux-review`, `/mobile-adapt`, `/register-colors`, `/update-memory-bank`, `/reset-memory-bank`
+- **`memory-bank/`** — 세션 간 디자인 작업 상태 유지(도구 비종속). 새 프로젝트 전환 시 `/reset-memory-bank`.
+
+> 권한: `.claude/settings.local.json`은 읽기 툴(`get_*`)만 자동 허용합니다. `run_figma_code`·쓰기 툴은 임의 코드 실행/변경이라 매번 승인받습니다. 프롬프트를 줄이려면 `/permissions`로 직접 추가하세요.
 
 ---
 
 ## 제공되는 MCP Tools
 
 > MCP 모드에서만 사용 가능합니다. HTTP 모드에서는 동일한 기능이 REST API + CLI로 제공됩니다.
+> Claude Code에서는 `mcp__figma-bridge__*` 형태의 deferred 툴로 노출되며, 필요 시 ToolSearch로 스키마가 로드됩니다.
 
 ### 읽기
 
@@ -335,7 +379,7 @@ AI가 디자인 작업 시 이 토큰을 자동으로 참조합니다.
 
 | 원인 | 해결 |
 |---|---|
-| 서버가 실행되지 않음 | MCP: Cline이 자동 기동. HTTP: `npm run start:http` 실행 |
+| 서버가 실행되지 않음 | MCP: Claude Code가 `.mcp.json`으로 자동 기동. HTTP: `npm run start:http` 실행 |
 | 포트 불일치 | 플러그인 UI 포트 = `WS_PORT` (기본 8080) |
 | 포트 사용 중 | `lsof -i :8080` → `kill <PID>` |
 | Figma 웹 버전 | **Desktop 앱** 필수 |
@@ -358,7 +402,27 @@ node figma-cli.js run script.js
 |---|---|
 | 플러그인 미연결 | `node figma-cli.js status`로 확인 |
 | Figma 백그라운드 | Figma를 포그라운드로 전환 |
-| 복잡한 코드 | `CODE_TIMEOUT_MS` 환경변수 증가 |
+| 복잡한 코드 | 요청별 `--timeout 120000` 또는 `CODE_TIMEOUT_MS` 환경변수 증가 |
+
+**요청별 타임아웃 (run/eval/tpl):** CLI의 글로벌 플래그 `--timeout <ms>`가 `/api/run_code` body에도 실립니다. 서버는 `MAX_RUN_TIMEOUT_MS`(기본 5분)로 상한을 둡니다.
+
+```bash
+# 무거운 작업만 120초까지 허용
+node figma-cli.js --timeout 120000 run heavy-recolor.js
+```
+
+### 연결이 자꾸 끊겨요 (회사 방화벽 등)
+
+서버↔플러그인 사이 keep-alive를 끄거나 늦출 수 있습니다.
+
+| 증상 | 시도 |
+|---|---|
+| WebView ping 호환 문제로 끊김 | 서버 ping 비활성화: `RELAY_WS_PING_MS=0 npm run start:http` |
+| 짧은 idle 후 끊김 | 일반 워크플로에서는 그대로 두고, 플러그인 UI의 “연결” 버튼으로 수동 복구 |
+
+### 플러그인 패널을 두 개 열었어요
+
+릴레이는 **단일 클라이언트**만 받습니다. 두 번째 패널은 1008 코드로 거부되고, 그 패널은 자동 재연결을 멈춥니다. 다른 창을 닫고 두 번째 패널의 “연결” 버튼을 다시 누르세요.
 
 ### 폰트 에러
 
@@ -376,8 +440,10 @@ await figma.loadFontAsync({family: 'Inter', style: 'Regular'});
 |---|---|---|
 | `WS_PORT` | `8080` | WebSocket 포트 |
 | `HTTP_PORT` | `3000` | HTTP API 포트 (HTTP 모드만) |
-| `REQUEST_TIMEOUT_MS` | `10000` | 일반 요청 타임아웃 (ms) |
-| `CODE_TIMEOUT_MS` | `30000` | 코드 실행 타임아웃 (ms) |
+| `REQUEST_TIMEOUT_MS` | `30000` | 일반 요청 타임아웃 (ms) |
+| `CODE_TIMEOUT_MS` | `60000` | `RUN_CODE` 기본 타임아웃 (ms) |
+| `MAX_RUN_TIMEOUT_MS` | `300000` | `/api/run_code` 요청별 타임아웃 상한 (5분) |
+| `RELAY_WS_PING_MS` | `15000` | WebSocket ping 주기 (ms). `0`이면 비활성화 |
 | `FIGMA_API` | `http://localhost:3000` | CLI가 연결할 HTTP 서버 주소 |
 
 ---
@@ -389,7 +455,7 @@ figma-mcp-bridge/
 ├── relay-server/              # Node.js Relay Server
 │   ├── src/
 │   │   ├── ws.ts              # WebSocket 공유 모듈 (MCP/HTTP 공통)
-│   │   ├── index.ts           # MCP 모드 엔트리포인트
+│   │   ├── index.ts           # MCP 모드 엔트리포인트 (동결)
 │   │   └── http-server.ts     # HTTP 모드 엔트리포인트 (Express)
 │   ├── dist/                  # 빌드 결과물
 │   ├── tsconfig.json
@@ -402,23 +468,40 @@ figma-mcp-bridge/
 │   ├── ui.html                # Plugin UI (WebSocket 클라이언트)
 │   └── package.json
 │
+├── templates/                 # 고수준 UI 템플릿 (card-premium, bento-grid, cta-premium 등)
+├── scripts/                   # 예제·헬퍼 스크립트 (color-palette, apply-soft-dark 등)
+├── docs/                      # 아키텍처 다이어그램 (.drawio)
+├── memory-bank/               # AI 세션 간 컨텍스트 유지 파일 (6개)
+│
 ├── figma-cli.js               # CLI 래퍼 (HTTP 모드용, 빌드 불필요)
-├── .clinerules                # Cline 하네스 설정
-├── design-system.md           # 디자인 토큰 정의
+├── start.command              # macOS 더블클릭 시작 스크립트
+├── make-release.sh            # 빌드 + zip 패키징 스크립트
+├── .mcp.json                  # Claude Code MCP 서버 등록 (figma-bridge)
+├── CLAUDE.md                  # Claude Code 상시 규칙
+├── .claude/skills/            # Claude Code 스킬 (도메인 6 + 워크플로우 6)
+├── DESIGN.md                  # 디자인 토큰 정의 (SSOT)
 └── README.md
 ```
+
+> **Memory Bank:** AI가 디자인 작업 히스토리를 세션 간 유지하기 위한 노트 폴더입니다.
+> 새 디자인 프로젝트를 시작할 때는 `/reset-memory-bank` 스킬을 사용하세요.
 
 ### Scripts
 
 ```bash
-# MCP 모드 (Cursor / Cline with MCP)
-cd relay-server && npm run start:mcp
+# 서버 시작 (가장 쉬운 방법)
+./start.command          # 의존성 확인 + 빌드 + HTTP 서버 실행
 
-# HTTP 모드 (Cline without MCP)
-cd relay-server && npm run start:http
+# 직접 실행
+cd relay-server && npm run start:http   # HTTP 모드 (Mode B, 권장)
+cd relay-server && npm run start:mcp    # MCP 모드 (Mode A)
 
-# Figma 플러그인 빌드
+# 빌드
+cd relay-server && npm run build
 cd figma-plugin && npm run build
+
+# 릴리즈 zip 만들기
+./make-release.sh 1.0.0
 ```
 
 ---

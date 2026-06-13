@@ -11,13 +11,13 @@ const colW = Math.floor(totalW / headers.length);
 
 const table = figma.createFrame();
 table.name = "Table";
+table.resize(totalW, 10);
 table.layoutMode = "VERTICAL";
 table.primaryAxisSizingMode = "AUTO";
 table.counterAxisSizingMode = "FIXED";
-table.resize(totalW, 10);
 table.fills = [{type: "SOLID", color: {r: 1, g: 1, b: 1}}];
-table.cornerRadius = 8;
-table.strokes = [{type: "SOLID", color: {r: 0.898, g: 0.906, b: 0.922}}];
+table.cornerRadius = 12;
+table.strokes = [{type: "SOLID", color: {r: 0.910, g: 0.918, b: 0.933}}];
 table.strokeWeight = 1;
 table.clipsContent = true;
 table.x = {{x|0}};
@@ -25,33 +25,35 @@ table.y = {{y|0}};
 
 function createRow(cells, isHeader) {
   const row = figma.createFrame();
-  row.name = isHeader ? "Header" : cells[0] || "Row";
+  row.name = isHeader ? "Header" : (cells[0] || "Row");
   row.layoutMode = "HORIZONTAL";
+  row.primaryAxisSizingMode = "AUTO";
+  row.counterAxisSizingMode = "AUTO";
   row.counterAxisAlignItems = "CENTER";
-  row.paddingTop = row.paddingBottom = isHeader ? 12 : 10;
-  row.fills = isHeader ? [{type: "SOLID", color: {r: 0.976, g: 0.980, b: 0.984}}] : [];
+  row.paddingTop = row.paddingBottom = isHeader ? 12 : 14;
+  row.fills = isHeader ? [{type: "SOLID", color: {r: 0.973, g: 0.976, b: 0.980}}] : [];
 
   for (let i = 0; i < headers.length; i++) {
     const cell = figma.createFrame();
     cell.name = headers[i];
     cell.layoutMode = "HORIZONTAL";
+    cell.primaryAxisSizingMode = "FIXED";
+    cell.counterAxisSizingMode = "AUTO";
     cell.counterAxisAlignItems = "CENTER";
     cell.paddingLeft = cell.paddingRight = 16;
     cell.fills = [];
     cell.resize(colW, 10);
-    cell.primaryAxisSizingMode = "FIXED";
 
     const t = figma.createText();
     t.fontName = {family: "Inter", style: isHeader ? "Semi Bold" : "Regular"};
-    t.fontSize = 13;
-    t.characters = (cells[i] || "").trim();
-    t.fills = [{type: "SOLID", color: isHeader ? {r:0.067,g:0.094,b:0.153} : {r:0.420,g:0.447,b:0.498}}];
+    t.fontSize = 14;
+    t.lineHeight = {unit: "PIXELS", value: 20};
+    t.characters = (cells[i] || "—").trim();
+    t.fills = [{type: "SOLID", color: isHeader ? {r: 0.133, g: 0.157, b: 0.208} : {r: 0.380, g: 0.408, b: 0.459}}];
     cell.appendChild(t);
     t.layoutSizingHorizontal = "FILL";
-
     row.appendChild(cell);
   }
-
   return row;
 }
 
@@ -62,7 +64,7 @@ headerRow.layoutSizingHorizontal = "FILL";
 for (const cells of rowData) {
   const div = figma.createRectangle();
   div.resize(100, 1);
-  div.fills = [{type: "SOLID", color: {r: 0.953, g: 0.957, b: 0.965}}];
+  div.fills = [{type: "SOLID", color: {r: 0.945, g: 0.949, b: 0.957}}];
   table.appendChild(div);
   div.layoutSizingHorizontal = "FILL";
 

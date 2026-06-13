@@ -4,8 +4,22 @@ import { startWebSocketServer, sendToFigma, isConnected, log, CODE_TIMEOUT_MS } 
 startWebSocketServer();
 
 const HTTP_PORT = parseInt(process.env.HTTP_PORT || "3000", 10);
+const MAX_RUN_TIMEOUT_MS = parseInt(process.env.MAX_RUN_TIMEOUT_MS || `${5 * 60_000}`, 10);
+const MIN_RUN_TIMEOUT_MS = 1_000;
+
 const app = express();
 app.use(express.json({ limit: "10mb" }));
+
+function clampRunTimeout(requested: unknown, fallback: number): number {
+  const n =
+    typeof requested === "number" && Number.isFinite(requested)
+      ? requested
+      : typeof requested === "string" && requested
+        ? parseInt(requested, 10)
+        : NaN;
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(Math.max(n, MIN_RUN_TIMEOUT_MS), MAX_RUN_TIMEOUT_MS);
+}
 
 async function handle(
   res: express.Response,
@@ -29,19 +43,55 @@ app.get("/api/status", (_req, res) => {
 
 // ===== Read =====
 function readOpts(query: Record<string, any>) {
-  const compact = query.verbose !== "1" && query.verbose !== "true";
+  const skeleton = query.skeleton === "1" || query.skeleton === "true";
+  const verbose = query.verbose === "1" || query.verbose === "true";
+  const compact = !verbose && !skeleton;
   const depth = query.depth ? parseInt(query.depth as string, 10) : undefined;
-  return { compact, depth };
+  const timeout = query.timeout ? parseInt(query.timeout as string, 10) : undefined;
+  return { compact, skeleton, depth, timeout };
 }
 
 app.get("/api/selection", (req, res) => {
-  handle(res, "GET_SELECTION", readOpts(req.query));
+  const opts = readOpts(req.query);
+  handle(res, "GET_SELECTION", opts, opts.timeout);
 });
-app.get("/api/styles", (_req, res) => handle(res, "GET_STYLES"));
-app.get("/api/components", (_req, res) => handle(res, "GET_COMPONENTS"));
+app.get("/api/styles", (req, res) => handle(res, "GET_STYLES", undefined, readOpts(req.query).timeout));
+app.get("/api/components", (req, res) => handle(res, "GET_COMPONENTS", undefined, readOpts(req.query).timeout));
 app.get("/api/node/:id", (req, res) => {
-  handle(res, "GET_NODE_BY_ID", { nodeId: req.params.id, ...readOpts(req.query) });
+  const opts = readOpts(req.query);
+  handle(res, "GET_NODE_BY_ID", { nodeId: req.params.id, ...opts }, opts.timeout);
 });
+
+// ===== Read: Children pagination =====
+app.get("/api/node/:id/children", (req, res) => {
+  const opts = readOpts(req.query);
+  const offset = parseInt((req.query.offset as string) || "0", 10);
+  const limit = parseInt((req.query.limit as string) || "20", 10);
+  handle(res, "GET_CHILDREN_PAGE", {
+    nodeId: req.params.id,
+    offset,
+    limit,
+    depth: opts.depth,
+    compact: opts.compact,
+    skeleton: opts.skeleton,
+  }, opts.timeout);
+});
+
+// ===== Pages =====
+app.get("/api/pages", (req, res) => handle(res, "GET_PAGES", undefined, readOpts(req.query).timeout));
+app.post("/api/pages/switch", (req, res) => handle(res, "SET_CURRENT_PAGE", req.body));
+app.post("/api/pages/create", (req, res) => handle(res, "CREATE_PAGE", req.body));
+app.post("/api/pages/delete", (req, res) => handle(res, "DELETE_PAGE", req.body));
+
+// ===== Variables =====
+app.get("/api/vars", (req, res) => handle(res, "GET_VARIABLES", undefined, readOpts(req.query).timeout));
+app.get("/api/vars/collections", (req, res) => handle(res, "GET_VARIABLE_COLLECTIONS", undefined, readOpts(req.query).timeout));
+app.post("/api/vars/create", (req, res) => handle(res, "CREATE_VARIABLE", req.body));
+app.post("/api/vars/bind", (req, res) => handle(res, "BIND_VARIABLE", req.body));
+
+// ===== Annotations =====
+app.get("/api/annotations/:id", (req, res) => handle(res, "GET_ANNOTATIONS", { nodeId: req.params.id }, readOpts(req.query).timeout));
+app.post("/api/annotations", (req, res) => handle(res, "SET_ANNOTATIONS", req.body));
 
 // ===== Write =====
 app.post("/api/create_node", (req, res) => handle(res, "CREATE_NODE", req.body));
@@ -51,7 +101,10 @@ app.post("/api/export_node", (req, res) => handle(res, "EXPORT_NODE", req.body))
 
 // ===== Universal =====
 app.post("/api/run_code", (req, res) => {
-  handle(res, "RUN_CODE", req.body, CODE_TIMEOUT_MS);
+  const body = (req.body ?? {}) as { code?: unknown; timeout?: unknown };
+  const requested = body.timeout ?? (req.query.timeout as string | undefined);
+  const timeout = clampRunTimeout(requested, CODE_TIMEOUT_MS);
+  handle(res, "RUN_CODE", { code: body.code }, timeout);
 });
 
 // ===== Batch (with $ref variable substitution) =====
@@ -95,7 +148,12 @@ app.post("/api/batch", async (req, res) => {
   for (const op of operations) {
     try {
       const payload = resolveRefs(op.payload, refs);
-      const timeout = op.type === "RUN_CODE" ? CODE_TIMEOUT_MS : undefined;
+      const timeout =
+        op.type === "RUN_CODE"
+          ? clampRunTimeout(op.timeout, CODE_TIMEOUT_MS)
+          : op.timeout
+            ? clampRunTimeout(op.timeout, CODE_TIMEOUT_MS)
+            : undefined;
       const result = await sendToFigma(op.type, payload, timeout);
       if (op.ref) refs.set(op.ref, result);
       results.push({ ok: true, ref: op.ref || null, data: result });

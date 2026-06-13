@@ -116,10 +116,37 @@
 
   let ws = null;
   let reconnectTimer = null;
+  let heartbeatTimer = null;
+  let heartbeatAckPending = false;
+  let heartbeatMissCount = 0;
+  let manualDisconnect = false;
+  /** 서버가 “이미 다른 클라이언트 연결 중”으로 끊은 뒤 자동 재연결을 막음 */
+  let pauseReconnectUntilManual = false;
+
+  const HEARTBEAT_INTERVAL = 20000;
+  const HEARTBEAT_MISS_BEFORE_CLOSE = 5;
+  const RECONNECT_BASE = 3000;
+  const RECONNECT_MAX = 30000;
+  let reconnectDelay = RECONNECT_BASE;
+
+  let lastLogMsg = "";
+  let logRepeatCount = 0;
 
   function appendLog(msg) {
     const ts = new Date().toLocaleTimeString("ko-KR", { hour12: false });
-    logEl.textContent += `[${ts}] ${msg}\n`;
+    if (msg === lastLogMsg) {
+      logRepeatCount++;
+      const lines = logEl.textContent.split("\n");
+      lines.pop();
+      const last = lines.pop() || "";
+      const base = last.replace(/ \(\d+회 반복\)$/, "");
+      lines.push(base + " (" + (logRepeatCount + 1) + "회 반복)");
+      logEl.textContent = lines.join("\n") + "\n";
+    } else {
+      lastLogMsg = msg;
+      logRepeatCount = 0;
+      logEl.textContent += `[${ts}] ${msg}\n`;
+    }
     logEl.scrollTop = logEl.scrollHeight;
   }
 
@@ -134,11 +161,61 @@
   }
 
   // -----------------------------------------------------------------------
+  // Heartbeat
+  // -----------------------------------------------------------------------
+  function startHeartbeat() {
+    stopHeartbeat();
+    heartbeatAckPending = false;
+    heartbeatTimer = setInterval(() => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        stopHeartbeat();
+        return;
+      }
+      if (heartbeatAckPending) {
+        heartbeatMissCount++;
+        appendLog(
+          "Heartbeat ACK 미응답 (" +
+            heartbeatMissCount +
+            "/" +
+            HEARTBEAT_MISS_BEFORE_CLOSE +
+            ") — 참고: 피그마 플러그인을 두 창에서 켜면 서로 연결을 끊습니다."
+        );
+        heartbeatAckPending = false;
+        if (heartbeatMissCount >= HEARTBEAT_MISS_BEFORE_CLOSE) {
+          appendLog("Heartbeat 연속 실패 — 재연결");
+          heartbeatMissCount = 0;
+          stopHeartbeat();
+          ws.close();
+          return;
+        }
+      } else {
+        heartbeatMissCount = 0;
+      }
+      heartbeatAckPending = true;
+      try {
+        ws.send(JSON.stringify({ type: "HEARTBEAT" }));
+      } catch {
+        appendLog("Heartbeat 전송 실패 — 재연결");
+        stopHeartbeat();
+        ws.close();
+      }
+    }, HEARTBEAT_INTERVAL);
+  }
+
+  function stopHeartbeat() {
+    if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+    heartbeatAckPending = false;
+  }
+
+  // -----------------------------------------------------------------------
   // WebSocket lifecycle
   // -----------------------------------------------------------------------
   function connect() {
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
 
+    manualDisconnect = false;
+    pauseReconnectUntilManual = false;
+    reconnectDelay = RECONNECT_BASE;
     const url = getWsUrl();
     setStatus("connecting");
     appendLog("서버에 연결 시도… (" + url + ")");
@@ -147,30 +224,50 @@
     ws.onopen = () => {
       setStatus("connected");
       appendLog("서버 연결 성공");
+      heartbeatMissCount = 0;
+      reconnectDelay = RECONNECT_BASE;
       clearReconnect();
+      startHeartbeat();
     };
 
-    ws.onclose = () => {
+    ws.onclose = (ev) => {
+      stopHeartbeat();
       setStatus("disconnected");
-      appendLog("서버 연결 끊김");
       ws = null;
-      scheduleReconnect();
+      const dup =
+        ev.code === 1008 ||
+        (typeof ev.reason === "string" && ev.reason.indexOf("already") !== -1);
+      if (dup) {
+        pauseReconnectUntilManual = true;
+        appendLog(
+          "서버가 연결을 거부했습니다 (이미 다른 플러그인 패널이 릴레이에 연결되어 있음). 불필요한 창에서는 ‘연결 해제’를 누르거나, 한 곳만 켜 두세요. 자동 재연결은 멈춥니다 — 다시 연결하려면 ‘연결’을 누르세요."
+        );
+        return;
+      }
+      appendLog("서버 연결 끊김");
+      if (!manualDisconnect && !pauseReconnectUntilManual) scheduleReconnect();
     };
 
-    ws.onerror = (e) => {
+    ws.onerror = () => {
       appendLog("WebSocket 오류 발생");
     };
 
     ws.onmessage = (event) => {
       let msg;
       try { msg = JSON.parse(event.data); } catch { return; }
+      if (msg.type === "HEARTBEAT_ACK") {
+        heartbeatAckPending = false;
+        return;
+      }
       appendLog("← " + msg.type);
       parent.postMessage({ pluginMessage: msg }, "*");
     };
   }
 
   function disconnect() {
+    manualDisconnect = true;
     clearReconnect();
+    stopHeartbeat();
     if (ws) {
       ws.close();
       ws = null;
@@ -181,11 +278,12 @@
 
   function scheduleReconnect() {
     if (reconnectTimer) return;
+    appendLog("재연결 대기… (" + (reconnectDelay / 1000) + "초)");
     reconnectTimer = setTimeout(() => {
       reconnectTimer = null;
-      appendLog("자동 재연결 시도…");
       connect();
-    }, 3000);
+    }, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 2, RECONNECT_MAX);
   }
 
   function clearReconnect() {

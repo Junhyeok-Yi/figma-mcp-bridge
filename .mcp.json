@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "figma-bridge": {
+      "command": "node",
+      "args": ["/Users/joshuayi/figma-mcp-bridge/relay-server/dist/index.js"],
+      "env": {
+        "WS_PORT": "8080"
+      }
+    }
+  }
+}

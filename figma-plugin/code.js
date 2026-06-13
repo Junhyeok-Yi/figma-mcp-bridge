@@ -74,7 +74,12 @@ function extractNodeData(node, maxDepth, _depth) {
         const ch = node.children;
         if (maxDepth !== undefined && d >= maxDepth) {
             base.childCount = ch.length;
-            base.childSummary = ch.map(c => ({ id: c.id, name: c.name, type: c.type }));
+            base.childSummary = ch.map(c => {
+                const s = { id: c.id, name: c.name, type: c.type };
+                if (c.type === "TEXT")
+                    s.characters = c.characters;
+                return s;
+            });
         }
         else {
             base.children = ch.map(c => extractNodeData(c, maxDepth, d + 1));
@@ -204,9 +209,32 @@ function compactifyPaints(paints) {
         return p;
     });
 }
+function skeletonify(data) {
+    const out = { id: data.id, name: data.name, type: data.type };
+    if (data.type === "TEXT" && data.characters !== undefined) {
+        out.characters = data.characters;
+    }
+    if (data.childCount !== undefined)
+        out.childCount = data.childCount;
+    if (data.childSummary)
+        out.childSummary = data.childSummary;
+    if (Array.isArray(data.children)) {
+        out.childCount = data.children.length;
+        out.childSummary = data.children.map(c => {
+            const s = { id: c.id, name: c.name, type: c.type };
+            if (c.type === "TEXT" && c.characters !== undefined)
+                s.characters = c.characters;
+            return s;
+        });
+    }
+    return out;
+}
 function compactify(data) {
     const out = { id: data.id, name: data.name, type: data.type };
-    if (data.visible === false)
+    const defaults = [];
+    if (data.visible !== false)
+        defaults.push("visible");
+    else
         out.visible = false;
     if (data.x !== undefined)
         out.x = data.x;
@@ -218,8 +246,18 @@ function compactify(data) {
         out.height = data.height;
     if (data.rotation && data.rotation !== 0)
         out.rotation = data.rotation;
+    else
+        defaults.push("rotation");
     if (data.opacity !== undefined && data.opacity !== 1)
         out.opacity = data.opacity;
+    else
+        defaults.push("opacity");
+    if (data.blendMode && data.blendMode !== "PASS_THROUGH")
+        out.blendMode = data.blendMode;
+    else
+        defaults.push("blendMode");
+    if (defaults.length > 0)
+        out._defaults = defaults;
     if (Array.isArray(data.fills) && data.fills.length > 0)
         out.fills = compactifyPaints(data.fills);
     if (Array.isArray(data.strokes) && data.strokes.length > 0)
@@ -259,18 +297,56 @@ function compactify(data) {
     }
     if (data.childCount !== undefined)
         out.childCount = data.childCount;
-    if (data.childSummary)
-        out.childSummary = data.childSummary;
+    if (data.childSummary) {
+        out.childSummary = data.childSummary.map(c => {
+            const s = { id: c.id, name: c.name, type: c.type };
+            if (c.type === "TEXT" && c.characters !== undefined)
+                s.characters = c.characters;
+            return s;
+        });
+    }
     if (Array.isArray(data.children)) {
         out.children = data.children.map(compactify);
     }
     return out;
 }
+const MAX_CHILDREN_EXPAND = 20;
+const MAX_RESPONSE_BYTES = 500 * 1024;
+function autoTruncate(data) {
+    const json = JSON.stringify(data);
+    if (json.length <= MAX_RESPONSE_BYTES)
+        return data;
+    function truncateChildren(node) {
+        const out = Object.assign({}, node);
+        if (Array.isArray(out.children)) {
+            const children = out.children;
+            if (children.length > MAX_CHILDREN_EXPAND) {
+                const kept = children.slice(0, MAX_CHILDREN_EXPAND).map(truncateChildren);
+                const rest = children.slice(MAX_CHILDREN_EXPAND).map(c => {
+                    const s = { id: c.id, name: c.name, type: c.type };
+                    if (c.type === "TEXT" && c.characters !== undefined)
+                        s.characters = c.characters;
+                    return s;
+                });
+                out.children = kept;
+                out._truncatedChildren = rest;
+                out._notice = `${children.length}개 자식 중 처음 ${MAX_CHILDREN_EXPAND}개만 전개됨. 나머지는 'children <id> --offset ${MAX_CHILDREN_EXPAND}'로 조회 가능.`;
+            }
+            else {
+                out.children = children.map(truncateChildren);
+            }
+        }
+        return out;
+    }
+    const result = truncateChildren(data);
+    result.truncated = true;
+    return result;
+}
 // ---------------------------------------------------------------------------
 // Message handler
 // ---------------------------------------------------------------------------
 figma.ui.onmessage = async (msg) => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d, _e;
     const { type, messageId } = msg;
     function reply(replyType, payload) {
         figma.ui.postMessage({ type: replyType, messageId, payload });
@@ -282,21 +358,26 @@ figma.ui.onmessage = async (msg) => {
     // READ: Selection
     // ===================================================================
     if (type === "GET_SELECTION") {
-        const compact = (_b = (_a = msg.payload) === null || _a === void 0 ? void 0 : _a.compact) !== null && _b !== void 0 ? _b : false;
-        const depth = (_c = msg.payload) === null || _c === void 0 ? void 0 : _c.depth;
+        const compact = ((_a = msg.payload) === null || _a === void 0 ? void 0 : _a.compact) !== false;
+        const skeleton = (_c = (_b = msg.payload) === null || _b === void 0 ? void 0 : _b.skeleton) !== null && _c !== void 0 ? _c : false;
+        const depth = (_d = msg.payload) === null || _d === void 0 ? void 0 : _d.depth;
         const selection = figma.currentPage.selection;
         if (selection.length === 0) {
             reply("SELECTION_RESULT", { error: null, layers: [], message: "선택된 레이어가 없습니다." });
             return;
         }
         let layers = selection.map(n => extractNodeData(n, depth));
-        if (!compact) {
+        if (skeleton) {
+            layers = layers.map(skeletonify);
+        }
+        else if (compact) {
+            layers = layers.map(l => autoTruncate(compactify(l)));
+        }
+        else {
             const cssMap = await getCssForNodes(selection);
             for (const layer of layers)
                 patchCss(layer, cssMap);
         }
-        if (compact)
-            layers = layers.map(compactify);
         reply("SELECTION_RESULT", { error: null, layers });
     }
     // ===================================================================
@@ -355,7 +436,7 @@ figma.ui.onmessage = async (msg) => {
     // ===================================================================
     else if (type === "GET_NODE_BY_ID") {
         try {
-            const { nodeId, compact, depth } = msg.payload;
+            const { nodeId, compact, skeleton, depth } = msg.payload;
             const node = await figma.getNodeByIdAsync(nodeId);
             if (!node) {
                 reply("NODE_RESULT", { error: null, node: null, message: `노드를 찾을 수 없습니다: ${nodeId}` });
@@ -366,12 +447,16 @@ figma.ui.onmessage = async (msg) => {
                 return;
             }
             let data = extractNodeData(node, depth);
-            if (!compact) {
+            if (skeleton) {
+                data = skeletonify(data);
+            }
+            else if (compact) {
+                data = autoTruncate(compactify(data));
+            }
+            else {
                 const cssMap = await getCssForNodes([node]);
                 patchCss(data, cssMap);
             }
-            if (compact)
-                data = compactify(data);
             reply("NODE_RESULT", { error: null, node: data });
         }
         catch (err) {
@@ -533,6 +618,245 @@ figma.ui.onmessage = async (msg) => {
         }
         catch (err) {
             replyError("EXPORT_RESULT", String(err));
+        }
+    }
+    // ===================================================================
+    // READ: Get children page (paginated)
+    // ===================================================================
+    else if (type === "GET_CHILDREN_PAGE") {
+        try {
+            const { nodeId, offset = 0, limit = 20, depth, compact, skeleton } = msg.payload;
+            const node = await figma.getNodeByIdAsync(nodeId);
+            if (!node || !("children" in node)) {
+                replyError("CHILDREN_PAGE_RESULT", `자식을 가진 노드가 아닙니다: ${nodeId}`);
+                return;
+            }
+            const parent = node;
+            const total = parent.children.length;
+            const slice = parent.children.slice(offset, offset + limit);
+            let items = slice.map(n => extractNodeData(n, depth));
+            if (skeleton) {
+                items = items.map(skeletonify);
+            }
+            else if (compact !== false) {
+                items = items.map(compactify);
+            }
+            else {
+                const cssMap = await getCssForNodes(slice);
+                for (const item of items)
+                    patchCss(item, cssMap);
+            }
+            reply("CHILDREN_PAGE_RESULT", {
+                error: null,
+                parentId: nodeId,
+                total,
+                offset,
+                limit,
+                returned: items.length,
+                hasMore: offset + limit < total,
+                children: items,
+            });
+        }
+        catch (err) {
+            replyError("CHILDREN_PAGE_RESULT", String(err));
+        }
+    }
+    // ===================================================================
+    // PAGES: List / Switch / Create / Delete
+    // ===================================================================
+    else if (type === "GET_PAGES") {
+        try {
+            const pages = figma.root.children.map(p => ({
+                id: p.id,
+                name: p.name,
+                childCount: p.children.length,
+                isCurrent: p === figma.currentPage,
+            }));
+            reply("PAGES_RESULT", { error: null, pages });
+        }
+        catch (err) {
+            replyError("PAGES_RESULT", String(err));
+        }
+    }
+    else if (type === "SET_CURRENT_PAGE") {
+        try {
+            const { name, id } = msg.payload;
+            const page = id
+                ? figma.root.children.find(p => p.id === id)
+                : figma.root.children.find(p => p.name === name);
+            if (!page) {
+                replyError("SET_PAGE_RESULT", `페이지를 찾을 수 없습니다: ${name || id}`);
+                return;
+            }
+            await figma.setCurrentPageAsync(page);
+            reply("SET_PAGE_RESULT", { error: null, pageId: page.id, pageName: page.name });
+        }
+        catch (err) {
+            replyError("SET_PAGE_RESULT", String(err));
+        }
+    }
+    else if (type === "CREATE_PAGE") {
+        try {
+            const { name } = msg.payload;
+            const page = figma.createPage();
+            page.name = name || "New Page";
+            reply("CREATE_PAGE_RESULT", { error: null, pageId: page.id, pageName: page.name });
+        }
+        catch (err) {
+            replyError("CREATE_PAGE_RESULT", String(err));
+        }
+    }
+    else if (type === "DELETE_PAGE") {
+        try {
+            const { name, id } = msg.payload;
+            const page = id
+                ? figma.root.children.find(p => p.id === id)
+                : figma.root.children.find(p => p.name === name);
+            if (!page) {
+                replyError("DELETE_PAGE_RESULT", `페이지를 찾을 수 없습니다: ${name || id}`);
+                return;
+            }
+            if (figma.root.children.length <= 1) {
+                replyError("DELETE_PAGE_RESULT", "마지막 페이지는 삭제할 수 없습니다.");
+                return;
+            }
+            const pageName = page.name;
+            page.remove();
+            reply("DELETE_PAGE_RESULT", { error: null, deleted: pageName });
+        }
+        catch (err) {
+            replyError("DELETE_PAGE_RESULT", String(err));
+        }
+    }
+    // ===================================================================
+    // VARIABLES: List / Collections / Create / Set value / Bind
+    // ===================================================================
+    else if (type === "GET_VARIABLES") {
+        try {
+            const collections = await figma.variables.getLocalVariableCollectionsAsync();
+            const result = [];
+            for (const col of collections) {
+                for (const varId of col.variableIds) {
+                    const v = await figma.variables.getVariableByIdAsync(varId);
+                    if (!v)
+                        continue;
+                    result.push({
+                        id: v.id,
+                        name: v.name,
+                        resolvedType: v.resolvedType,
+                        collectionId: col.id,
+                        collectionName: col.name,
+                        valuesByMode: v.valuesByMode,
+                    });
+                }
+            }
+            reply("VARIABLES_RESULT", { error: null, variables: result });
+        }
+        catch (err) {
+            replyError("VARIABLES_RESULT", String(err));
+        }
+    }
+    else if (type === "GET_VARIABLE_COLLECTIONS") {
+        try {
+            const collections = await figma.variables.getLocalVariableCollectionsAsync();
+            reply("COLLECTIONS_RESULT", {
+                error: null,
+                collections: collections.map(c => ({
+                    id: c.id,
+                    name: c.name,
+                    modes: c.modes,
+                    variableCount: c.variableIds.length,
+                })),
+            });
+        }
+        catch (err) {
+            replyError("COLLECTIONS_RESULT", String(err));
+        }
+    }
+    else if (type === "CREATE_VARIABLE") {
+        try {
+            const { name, collectionId, resolvedType, value, modeId } = msg.payload;
+            let colId = collectionId;
+            if (!colId) {
+                const cols = await figma.variables.getLocalVariableCollectionsAsync();
+                if (cols.length === 0) {
+                    const newCol = figma.variables.createVariableCollection("Design Tokens");
+                    colId = newCol.id;
+                }
+                else {
+                    colId = cols[0].id;
+                }
+            }
+            const variable = figma.variables.createVariable(name, colId, resolvedType || "COLOR");
+            if (value !== undefined) {
+                const col = await figma.variables.getVariableCollectionByIdAsync(colId);
+                const mid = modeId || ((_e = col === null || col === void 0 ? void 0 : col.modes[0]) === null || _e === void 0 ? void 0 : _e.modeId);
+                if (mid)
+                    variable.setValueForMode(mid, value);
+            }
+            reply("CREATE_VARIABLE_RESULT", { error: null, variableId: variable.id, name: variable.name });
+        }
+        catch (err) {
+            replyError("CREATE_VARIABLE_RESULT", String(err));
+        }
+    }
+    else if (type === "BIND_VARIABLE") {
+        try {
+            const { nodeId, field, variableId } = msg.payload;
+            const node = await figma.getNodeByIdAsync(nodeId);
+            if (!node) {
+                replyError("BIND_VARIABLE_RESULT", `노드를 찾을 수 없습니다: ${nodeId}`);
+                return;
+            }
+            const variable = await figma.variables.getVariableByIdAsync(variableId);
+            if (!variable) {
+                replyError("BIND_VARIABLE_RESULT", `변수를 찾을 수 없습니다: ${variableId}`);
+                return;
+            }
+            node.setBoundVariable(field, variable);
+            reply("BIND_VARIABLE_RESULT", { error: null, nodeId, field, variableId });
+        }
+        catch (err) {
+            replyError("BIND_VARIABLE_RESULT", String(err));
+        }
+    }
+    // ===================================================================
+    // ANNOTATIONS: Get / Set
+    // ===================================================================
+    else if (type === "GET_ANNOTATIONS") {
+        try {
+            const { nodeId } = msg.payload;
+            const node = await figma.getNodeByIdAsync(nodeId);
+            if (!node) {
+                replyError("ANNOTATIONS_RESULT", `노드를 찾을 수 없습니다: ${nodeId}`);
+                return;
+            }
+            const annotations = node.annotations || [];
+            reply("ANNOTATIONS_RESULT", { error: null, nodeId, annotations: JSON.parse(JSON.stringify(annotations)) });
+        }
+        catch (err) {
+            replyError("ANNOTATIONS_RESULT", String(err));
+        }
+    }
+    else if (type === "SET_ANNOTATIONS") {
+        try {
+            const { nodeId, label, annotations } = msg.payload;
+            const node = await figma.getNodeByIdAsync(nodeId);
+            if (!node) {
+                replyError("SET_ANNOTATIONS_RESULT", `노드를 찾을 수 없습니다: ${nodeId}`);
+                return;
+            }
+            if (label) {
+                const existing = node.annotations || [];
+                node.annotations = [...existing, { label }];
+            }
+            else if (annotations) {
+                node.annotations = annotations;
+            }
+            reply("SET_ANNOTATIONS_RESULT", { error: null, nodeId, count: (node.annotations || []).length });
+        }
+        catch (err) {
+            replyError("SET_ANNOTATIONS_RESULT", String(err));
         }
     }
     // ===================================================================

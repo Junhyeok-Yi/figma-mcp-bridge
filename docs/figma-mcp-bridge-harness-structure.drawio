@@ -1,0 +1,210 @@
+<mxfile host="app.diagrams.net" modified="2026-05-09" agent="cursor" version="22.1.0" type="device">
+  <diagram id="harness-structure" name="하네스 (Mode B)">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="figma-mcp-bridge — Mode B (HTTP + CLI) 표준 구조" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;" vertex="1" parent="1">
+          <mxGeometry x="40" y="8" width="720" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- Swimlane: User -->
+        <mxCell id="lane-user" value="사용자" style="swimlane;horizontal=0;startSize=28;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1080" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="user-box" value="프롬프트 / 작업 지시" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" vertex="1" parent="lane-user">
+          <mxGeometry x="20" y="35" width="200" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- Swimlane: Cline -->
+        <mxCell id="lane-cline" value="Cline (AI 에이전트)" style="swimlane;horizontal=0;startSize=28;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="130" width="1080" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="model" value="모델 → shell 실행 (figma-cli.js 등)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="lane-cline">
+          <mxGeometry x="20" y="40" width="320" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Harness container -->
+        <mxCell id="lane-harness" value="하네스 레이어 (Rules · Workflow · Skill · Hook)" style="swimlane;horizontal=0;startSize=28;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="250" width="1080" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="rules" value="Rules&#xa;.clinerules/main.md&#xa;DESIGN.md" style="shape=process;whiteSpace=wrap;html=1;rounded=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="lane-harness">
+          <mxGeometry x="30" y="45" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="workflow" value="Workflow&#xa;.clinerules/workflows/*.md&#xa;(단계별 플레이북)" style="shape=process;whiteSpace=wrap;html=1;rounded=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="lane-harness">
+          <mxGeometry x="260" y="45" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="skill" value="Skill&#xa;.cline/skills/*.md&#xa;(Figma/품질 절차)" style="shape=process;whiteSpace=wrap;html=1;rounded=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="lane-harness">
+          <mxGeometry x="510" y="45" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="hook" value="Hook (선택)&#xa;.clinerules/hooks/&#xa;주입·차단·로그" style="shape=process;whiteSpace=wrap;html=1;rounded=1;fillColor=#ffe6e6;strokeColor=#b85450;dashed=1;" vertex="1" parent="lane-harness">
+          <mxGeometry x="760" y="45" width="200" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="harness-note" value="Skill·Rules: Figma MCP 공식 스토리와 정합 ↑ / Hook: 안전·습관 보강" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#666666;" vertex="1" parent="lane-harness">
+          <mxGeometry x="30" y="130" width="920" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- Transport: Mode B only -->
+        <mxCell id="lane-transport" value="연결 (표준: Mode B — MCP 브릿지 프로세스 없음)" style="swimlane;horizontal=0;startSize=28;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="480" width="1080" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="mode-b" value="figma-cli.js → HTTP POST/GET :3000&#xa;서버: npm run start:http → http-server.ts + ws.ts (:8080)&#xa;환경: FIGMA_API=http://localhost:3000 (필요 시)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontStyle=0" vertex="1" parent="lane-transport">
+          <mxGeometry x="40" y="40" width="1000" height="68" as="geometry" />
+        </mxCell>
+
+        <!-- Relay + Plugin -->
+        <mxCell id="lane-backend" value="로컬 브릿지" style="swimlane;horizontal=0;startSize=28;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="630" width="1080" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="relay" value="Relay Server&#xa;ws.ts (WebSocket :8080)&#xa;http-server.ts (REST :3000)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="lane-backend">
+          <mxGeometry x="30" y="40" width="340" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="plugin" value="Figma Plugin&#xa;ui.html (WS 클라이언트)&#xa;code.ts (Plugin API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="lane-backend">
+          <mxGeometry x="420" y="40" width="340" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="figma-file" value="Figma 파일 / 캔버스" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="lane-backend">
+          <mxGeometry x="820" y="42" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#333333;" edge="1" parent="1" source="user-box" target="model">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#9673a6;dashed=1;" edge="1" parent="1" source="rules" target="model">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="150" y="230" />
+              <mxPoint x="150" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2b" value="컨텍스트" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;" vertex="1" connectable="0" parent="e2">
+          <mxGeometry x="-0.2" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#333333;" edge="1" parent="1" source="model" target="mode-b">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="180" y="420" />
+              <mxPoint x="540" y="420" />
+              <mxPoint x="540" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e4b" value="CLI 호출" style="edgeLabel;html=1;align=center;fontSize=10;" vertex="1" connectable="0" parent="e4">
+          <mxGeometry x="0.2" y="1" relative="1" as="geometry">
+            <mxPoint x="-10" y="-12" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#b85450;" edge="1" parent="1" source="mode-b" target="relay">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#b85450;" edge="1" parent="1" source="relay" target="plugin">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#6c8ebf;" edge="1" parent="1" source="plugin" target="figma-file">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-hook-model" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;dashed=1;strokeColor=#b85450;" edge="1" parent="1" source="hook" target="model">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="980" y="365" />
+              <mxPoint x="980" y="180" />
+              <mxPoint x="280" y="180" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl-hook" value="UserPromptSubmit / PreToolUse 등&#xa;contextModification" style="edgeLabel;html=1;align=center;fontSize=10;" vertex="1" connectable="0" parent="e-hook-model">
+          <mxGeometry x="-0.3" y="-1" relative="1" as="geometry">
+            <mxPoint x="40" y="-8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="readme-modes-ab" name="README — Mode A / B 브리지">
+    <mxGraphModel dx="1200" dy="720" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1230" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="ra0" />
+        <mxCell id="ra1" parent="ra0" />
+
+        <mxCell id="ra-title" value="README 요약 — Mode A (MCP) vs Mode B (HTTP + CLI)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=16;" vertex="1" parent="ra1">
+          <mxGeometry x="40" y="16" width="720" height="28" as="geometry" />
+        </mxCell>
+
+        <!-- Mode A -->
+        <mxCell id="ra-lane-a" value="Mode A: MCP" style="swimlane;horizontal=0;startSize=26;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="ra1">
+          <mxGeometry x="40" y="56" width="1120" height="118" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-a-ai" value="Cursor / Cline&#xa;(AI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="ra-lane-a">
+          <mxGeometry x="36" y="44" width="140" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-a-relay" value="Relay Server&#xa;(Node.js)&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;dist/index.js (MCP)&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="ra-lane-a">
+          <mxGeometry x="400" y="38" width="180" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-a-figma" value="Figma&#xa;(Plugin)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1" vertex="1" parent="ra-lane-a">
+          <mxGeometry x="848" y="44" width="140" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-e-a1" value="stdio · MCP 프로토콜" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=block;startFill=1;strokeColor=#333333;fontSize=10;" edge="1" parent="ra1" source="ra-a-ai" target="ra-a-relay">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-e-a2" value="양방향" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;startArrow=block;startFill=1;strokeColor=#b85450;fontSize=10;" edge="1" parent="ra1" source="ra-a-relay" target="ra-a-figma">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-e-a2b" value="WebSocket ws://localhost:8080" style="edgeLabel;html=1;align=center;fontSize=9;fontColor=#b85450;" vertex="1" connectable="0" parent="ra-e-a2">
+          <mxGeometry x="-0.1" relative="1" as="geometry">
+            <mxPoint y="-14" as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Mode B -->
+        <mxCell id="ra-lane-b" value="Mode B: HTTP + CLI (MCP 차단 환경)" style="swimlane;horizontal=0;startSize=26;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="ra1">
+          <mxGeometry x="40" y="206" width="1120" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-b-ai" value="Cline&#xa;(AI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="ra-lane-b">
+          <mxGeometry x="24" y="52" width="100" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-b-cli" value="figma-cli.js&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;CLI 래퍼&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="ra-lane-b">
+          <mxGeometry x="192" y="46" width="140" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-b-http" value="HTTP Server&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;Express :3000&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b85450;" vertex="1" parent="ra-lane-b">
+          <mxGeometry x="430" y="46" width="160" height="64" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-b-ws" value="WebSocket&lt;br&gt;&lt;font style=&quot;font-size:10px&quot;&gt;ws.ts :8080&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;" vertex="1" parent="ra-lane-b">
+          <mxGeometry x="680" y="50" width="130" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-b-figma" value="Figma&#xa;(Plugin)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1" vertex="1" parent="ra-lane-b">
+          <mxGeometry x="900" y="52" width="140" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-e-b1" value="shell cmd · stdout" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#333333;fontSize=9;" edge="1" parent="ra1" source="ra-b-ai" target="ra-b-cli">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-e-b2" value="HTTP" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#333333;fontSize=9;" edge="1" parent="ra1" source="ra-b-cli" target="ra-b-http">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-e-b3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endFill=1;strokeColor=#b85450;" edge="1" parent="ra1" source="ra-b-http" target="ra-b-ws">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-e-b3b" value="내부 연동" style="edgeLabel;html=1;align=center;fontSize=9;" vertex="1" connectable="0" parent="ra-e-b3">
+          <mxGeometry x="-0.2" relative="1" as="geometry">
+            <mxPoint y="-12" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ra-e-b4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=classic;endFill=1;startArrow=classic;startFill=1;strokeColor=#b85450;" edge="1" parent="ra1" source="ra-b-ws" target="ra-b-figma">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ra-e-b4b" value="ws://8080" style="edgeLabel;html=1;align=center;fontSize=9;fontColor=#b85450;" vertex="1" connectable="0" parent="ra-e-b4">
+          <mxGeometry x="0.2" relative="1" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="ra-note" value="Mode B는 relay의 http-server + ws가 함께 기동됩니다 (npm run start:http). MCP 브릿지 프로세스 없이 CLI만으로 HTTP에 접근합니다." style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#666666;" vertex="1" parent="ra1">
+          <mxGeometry x="40" y="400" width="1080" height="36" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
