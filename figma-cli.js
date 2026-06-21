@@ -18,6 +18,43 @@ const BASE_URL = process.env.FIGMA_API || "http://localhost:3000";
 
 // --timeout 을 쓰면 기다릴 수 있는 최대 시간(ms)을 기억해 둠(느린 작업/대용량 export 등)
 let globalTimeout = null;
+let workflowName = null;
+let forceRun = false;
+let globalStatusVerbose = false;
+
+const MEMORY_FILES = [
+  path.join(__dirname, "memory-bank", "activeContext.md"),
+  path.join(__dirname, "memory-bank", "progress.md"),
+];
+const MEMORY_MAX_STALE_MS = parseInt(process.env.MEMORY_MAX_STALE_MS || `${30 * 60 * 1000}`, 10);
+
+function ensureMemoryFresh(commandName) {
+  const stats = MEMORY_FILES.map((p) => {
+    if (!fs.existsSync(p)) throw new Error(`Memory file missing: ${p}`);
+    return fs.statSync(p);
+  });
+  const newest = Math.max(...stats.map((s) => s.mtimeMs));
+  const staleMs = Date.now() - newest;
+  if (staleMs > MEMORY_MAX_STALE_MS && !forceRun) {
+    const staleMin = Math.round(staleMs / 60000);
+    throw new Error(
+      `Memory bank is stale (${staleMin}m). Update memory-bank/activeContext.md + progress.md first, or pass --force. (command: ${commandName})`
+    );
+  }
+}
+
+function writeWorkflowLog(commandName, ok, errorMessage) {
+  const logDir = path.join(__dirname, ".figma-bridge", "logs");
+  fs.mkdirSync(logDir, { recursive: true });
+  const row = {
+    ts: new Date().toISOString(),
+    command: commandName,
+    workflow: workflowName,
+    ok,
+    error: errorMessage || null,
+  };
+  fs.appendFileSync(path.join(logDir, "workflow-usage.jsonl"), `${JSON.stringify(row)}\n`);
+}
 
 // method: GET(가져와줘) / POST(이 데이터로 작업해줘)
 // urlPath: /api/... 처럼 서버가 정해 둔 메뉴 번호
@@ -136,7 +173,15 @@ function buildNodePayload(flags) {
 const commands = {
   // 연결 잘 됐는지(플러그인+서버 살아있는지) 확인
   async status() {
-    return api("GET", "/api/status");
+    const status = await api("GET", "/api/status");
+    if (globalStatusVerbose) {
+      const logPath = path.join(__dirname, ".figma-bridge", "logs", "workflow-usage.jsonl");
+      const rows = fs.existsSync(logPath)
+        ? fs.readFileSync(logPath, "utf-8").trim().split("\n").filter(Boolean).slice(-5).map((l) => JSON.parse(l))
+        : [];
+      return { ...status, recentWorkflowUsage: rows };
+    }
+    return status;
   },
 
   // 캔버스에서 현재 선택된 레이어 정보 (간단 요약/자세함은 플래그로)
@@ -180,6 +225,7 @@ const commands = {
 
   // FRAME, TEXT 등 타입 + 옵션으로 레이어 새로 만들기
   async create(args) {
+    ensureMemoryFresh("create");
     const nodeType = (args[0] || "").toUpperCase();
     if (!nodeType) throw new Error("Usage: figma-cli create <type> [--name ... --w ... --h ...]");
     const flags = parseFlags(args.slice(1));
@@ -196,6 +242,7 @@ const commands = {
 
   // 이미 있는 노드의 속성 바꾸기(이름, 크기, 색 등)
   async modify(args) {
+    ensureMemoryFresh("modify");
     const nodeId = args[0];
     if (!nodeId) throw new Error("Usage: figma-cli modify <nodeId> [--name ... --w ...]");
     const flags = parseFlags(args.slice(1));
@@ -211,6 +258,7 @@ const commands = {
 
   // 노드 ID 여러 개를 한 번에 삭제(주의: 되돌리기는 Figma 쪽)
   async delete(args) {
+    ensureMemoryFresh("delete");
     if (args.length === 0) throw new Error("Usage: figma-cli delete <id> [<id> ...]");
     return api("POST", "/api/delete_nodes", { nodeIds: args });
   },
@@ -229,6 +277,7 @@ const commands = {
 
   // .js 파일 안의 "Figma Plugin API" 코드를 실행(복잡한 일은 이쪽으로)
   async run(args) {
+    ensureMemoryFresh("run");
     const filePath = args[0];
     if (!filePath) throw new Error("Usage: figma-cli run <file.js>");
     const code = fs.readFileSync(path.resolve(filePath), "utf-8");
@@ -237,6 +286,7 @@ const commands = {
 
   // operations.json: 여러 작업을 한 번에(대량/반복)
   async batch(args) {
+    ensureMemoryFresh("batch");
     const filePath = args[0];
     if (!filePath) throw new Error("Usage: figma-cli batch <operations.json>");
     const raw = fs.readFileSync(path.resolve(filePath), "utf-8");
@@ -246,6 +296,7 @@ const commands = {
 
   // 짧은 코드를 문자열로 바로 실행(빠른 확인용, 길면 run 사용 권장)
   async eval(args) {
+    ensureMemoryFresh("eval");
     const code = args.join(" ");
     if (!code) throw new Error("Usage: figma-cli eval <code>");
     return api("POST", "/api/run_code", withTimeout({ code }));
@@ -253,6 +304,7 @@ const commands = {
 
   // /templates/*.js "틀"에 --제목 --너비 같은 값을 끼워 넣고, 그 결과를 코드 실행으로 Figma에 반영
   async template(args) {
+    ensureMemoryFresh("template");
     const name = args[0];
     // 이 프로젝트의 templates 폴더(카드, 버튼 UI 등 프리셋)
     const tplDir = path.join(__dirname, "templates");
@@ -429,6 +481,10 @@ COMMANDS
 
 GLOBAL FLAGS
   --timeout <ms>                        Override request timeout (default: 30000)
+  --workflow <name>                     Tag this run with workflow metadata
+  --force                               Skip memory freshness guard for write commands
+                                        (create/modify/delete/run/batch/eval/template)
+  --verbose                             Extra details (status: workflow logs)
 
 ENVIRONMENT
   FIGMA_API    Base URL (default: http://localhost:3000)
@@ -477,8 +533,14 @@ async function main() {
   }
 
   // 서버 응답을 사람이 읽기 쉬운 JSON 형태로 터미널에 출력
-  const result = await handler(args);
-  console.log(JSON.stringify(result, null, 2));
+  try {
+    const result = await handler(args);
+    writeWorkflowLog(cmd, true);
+    console.log(JSON.stringify(result, null, 2));
+  } catch (err) {
+    writeWorkflowLog(cmd, false, err.message);
+    throw err;
+  }
 }
 
 // 예기치 못한 오류도 JSON 한 줄로 정리(자동화 도구가 파싱하기 쉽게)
@@ -486,3 +548,19 @@ main().catch((err) => {
   console.error(JSON.stringify({ error: err.message }));
   process.exit(1);
 });
+  const verboseIdx = rawArgs.indexOf("--verbose");
+  if (verboseIdx !== -1) {
+    globalStatusVerbose = true;
+    rawArgs.splice(verboseIdx, 1);
+  }
+
+  const workflowIdx = rawArgs.indexOf("--workflow");
+  if (workflowIdx !== -1 && rawArgs[workflowIdx + 1]) {
+    workflowName = rawArgs[workflowIdx + 1];
+    rawArgs.splice(workflowIdx, 2);
+  }
+  const forceIdx = rawArgs.indexOf("--force");
+  if (forceIdx !== -1) {
+    forceRun = true;
+    rawArgs.splice(forceIdx, 1);
+  }

@@ -5,10 +5,10 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
     font-size: 12px;
-    color: var(--figma-color-text, #333);
-    background: var(--figma-color-bg, #fff);
+    color: #000;
+    background: #fff;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -16,7 +16,7 @@
     height: 100vh;
   }
 
-  h2 { font-size: 14px; font-weight: 600; }
+  h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
 
   .status-row {
     display: flex;
@@ -38,9 +38,9 @@
 
   .log-area {
     flex: 1;
-    background: var(--figma-color-bg-secondary, #f5f5f5);
-    border: 1px solid var(--figma-color-border, #e0e0e0);
-    border-radius: 6px;
+    background: #dceeb1;
+    border: 1px solid #000;
+    border-radius: 24px;
     padding: 8px;
     overflow-y: auto;
     font-family: "SF Mono", Menlo, Consolas, monospace;
@@ -56,7 +56,7 @@
     flex: 1;
     padding: 8px 0;
     border: none;
-    border-radius: 6px;
+    border-radius: 24px;
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -64,24 +64,25 @@
   }
   button:hover { opacity: 0.85; }
   button.primary {
-    background: #18a0fb;
+    background: #000;
     color: #fff;
+    border-radius: 50px;
   }
   button.secondary {
-    background: var(--figma-color-bg-secondary, #e8e8e8);
-    color: var(--figma-color-text, #333);
+    background: #fff;
+    color: #000;
   }
 
   .info {
     font-size: 10px;
-    color: var(--figma-color-text-secondary, #999);
+    color: #555;
     text-align: center;
   }
 </style>
 </head>
 <body>
 
-<h2>MCP Bridge</h2>
+<h2>Figma-design-analysis</h2>
 
 <div class="status-row">
   <div id="badge" class="badge disconnected"></div>
